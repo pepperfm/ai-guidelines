@@ -17,7 +17,7 @@ CLI умеет:
 ## Установка
 
 ```bash
-composer require --dev pepperfm/ai-guidelines
+composer r --dev pepperfm/ai-guidelines
 ```
 
 ## Быстрый старт (интерактивно)
@@ -25,9 +25,9 @@ composer require --dev pepperfm/ai-guidelines
 Из корня проекта:
 
 ```bash
-php vendor/bin/pfm-guidelines
+vendor/bin/pfm-guidelines
 # или
-php vendor/bin/pfm-guidelines init
+vendor/bin/pfm-guidelines init
 ```
 
 Команда:
@@ -48,13 +48,13 @@ php vendor/bin/pfm-guidelines init
 ## Синхронизация (после composer update)
 
 ```bash
-php vendor/bin/pfm-guidelines sync
+vendor/bin/pfm-guidelines sync
 ```
 
 ## Без интерактива (CI / scripts)
 
 ```bash
-php vendor/bin/pfm-guidelines sync --no-interaction --mode=copy --presets=laravel,element-plus
+vendor/bin/pfm-guidelines sync --no-interaction --mode=copy --presets=laravel,element-plus
 ```
 
 Доступные параметры:

@@ -86,7 +86,7 @@ final class Paths
     private static function splitRoot(string $path): array
     {
         // Windows drive root like C:\
-        if (preg_match('/^[A-Za-z]:\\\\/?/', $path) === 1) {
+        if (preg_match('~^[A-Za-z]:[\\\\/]~', $path) === 1) {
             $root = substr($path, 0, 2) . DIRECTORY_SEPARATOR;
             $rest = substr($path, 2);
             $rest = ltrim($rest, DIRECTORY_SEPARATOR);

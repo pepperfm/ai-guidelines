@@ -9,7 +9,8 @@ final readonly class Installer
         private string $projectRoot,
         private bool $force = false,
         private bool $dryRun = false,
-    ) {}
+    ) {
+    }
 
     public function install(Config $config): InstallResult
     {
@@ -167,7 +168,7 @@ final readonly class Installer
             $dstDir = dirname($dst);
             $resolved = $link;
 
-            if (!str_starts_with($link, DIRECTORY_SEPARATOR) && !preg_match('/^[A-Za-z]:\\\\/?/', $link)) {
+            if (!str_starts_with($link, DIRECTORY_SEPARATOR) && !preg_match('~^[A-Za-z]:[\\\\/]~', $link)) {
                 $resolved = Paths::normalize($dstDir . DIRECTORY_SEPARATOR . $link);
             }
 

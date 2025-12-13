@@ -84,7 +84,6 @@ final class Application
         $presets = multiselect(
             label: 'Какие пресеты подключить?',
             options: $presetOptions,
-            default: array_values(array_intersect(['laravel', 'element-plus', 'nuxt-ui'], array_keys($presetOptions))),
             required: 'Нужно выбрать хотя бы один пресет.',
             hint: 'Можно выбрать несколько пунктов.',
         );
@@ -241,43 +240,13 @@ final class Application
         }
 
         // Offer to run boost:update if artisan exists (interactive only)
-        $noInteraction = (bool) ($opts['no_interaction'] ?? false);
-        $runBoost = (bool) ($opts['boost_update'] ?? false);
-
         $artisan = $projectRoot . DIRECTORY_SEPARATOR . 'artisan';
         if (!$dryRun && is_file($artisan)) {
-            if ($runBoost) {
-                self::runBoostUpdate($projectRoot);
-            } elseif (!$noInteraction) {
-                $do = confirm(
-                    label: 'Запустить php artisan boost:update сейчас?',
-                    hint: 'Чтобы Boost пересобрал AGENTS.md из .ai/guidelines/*',
-                );
-                if ($do) {
-                    self::runBoostUpdate($projectRoot);
-                }
-            }
+            info('Не забудьте запустить php artisan boost:update');
         }
 
         outro('Готово.');
         return 0;
-    }
-
-    private static function runBoostUpdate(string $projectRoot): void
-    {
-        info('Запускаю: php artisan boost:update');
-        $cmd = 'php artisan boost:update';
-
-        $cwd = getcwd();
-        chdir($projectRoot);
-        passthru($cmd, $code);
-        if ($cwd !== false) {
-            chdir($cwd);
-        }
-
-        if ($code !== 0) {
-            warning("boost:update завершился с кодом $code");
-        }
     }
 
     private static function unknownCommand(string $command): int
@@ -431,7 +400,10 @@ TXT;
 
     private static function configPath(string $projectRoot, string $configRel): string
     {
-        if (str_starts_with($configRel, DIRECTORY_SEPARATOR) || preg_match('/^[A-Za-z]:\\\\/?/', $configRel)) {
+        if (
+            str_starts_with($configRel, DIRECTORY_SEPARATOR)
+            || preg_match('~^[A-Za-z]:[\\\\/]~', $configRel) === 1
+        ) {
             return $configRel;
         }
 
