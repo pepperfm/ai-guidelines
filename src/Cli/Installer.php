@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace PepperFM\AiGuidelines\Cli;
@@ -20,27 +21,27 @@ final readonly class Installer
         $packageBase = Paths::packageBase();
         $resourceBase = $packageBase . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'guidelines';
 
-        // Ensure base dir exists
         $this->ensureDir($targetBase, $result);
 
         foreach ($config->presets as $presetId) {
             $src = $resourceBase . DIRECTORY_SEPARATOR . $presetId . DIRECTORY_SEPARATOR . 'core.md';
-            $dstDir = $targetBase . DIRECTORY_SEPARATOR . $presetId;
-            $dst = $dstDir . DIRECTORY_SEPARATOR . 'core.md';
 
             if (!is_file($src)) {
-                $result->addError("Preset '{$presetId}': source not found: $src");
+                $result->addError("Preset '$presetId': source not found: $src");
                 continue;
             }
 
-            $this->ensureDir($dstDir, $result);
+            if ($config->isFlat()) {
+                $dst = $targetBase . DIRECTORY_SEPARATOR . Presets::flatFileName($presetId);
+                $this->linkOrCopy($config, $src, $dst, $result);
+                continue;
+            }
 
-            $this->linkOrCopy(
-                config: $config,
-                src: $src,
-                dst: $dst,
-                result: $result
-            );
+            $dstDir = $targetBase . DIRECTORY_SEPARATOR . $presetId;
+            $dst = $dstDir . DIRECTORY_SEPARATOR . 'core.md';
+
+            $this->ensureDir($dstDir, $result);
+            $this->linkOrCopy($config, $src, $dst, $result);
         }
 
         return $result;
@@ -59,14 +60,14 @@ final readonly class Installer
 
         if (@mkdir($dir, 0777, true) === false && !is_dir($dir)) {
             $result->addError("Failed to create directory: $dir");
-        } else {
-            $result->addAction("mkdir -p $dir");
+            return;
         }
+
+        $result->addAction("mkdir -p $dir");
     }
 
     private function linkOrCopy(Config $config, string $src, string $dst, InstallResult $result): void
     {
-        // If exists and points to same content/target, skip
         if (file_exists($dst) || is_link($dst)) {
             if (!$this->force && $this->isAlreadyCorrect($config, $src, $dst)) {
                 $result->addSkipped($dst . ' (already up to date)');
@@ -87,7 +88,6 @@ final readonly class Installer
                 return;
             }
 
-            // If symlink failed, fallback to copy
             $result->addWarning("Symlink failed for $dst. Falling back to copy.");
         }
 
@@ -100,20 +100,19 @@ final readonly class Installer
         $relative = Paths::relative($dstDir, $src);
 
         if ($this->dryRun) {
-            $result->addAction("[dry-run] symlink {$relative} -> $dst");
+            $result->addAction("[dry-run] symlink $relative -> $dst");
             return;
         }
 
-        // Suppress warnings; we'll detect success via is_link
         @symlink($relative, $dst);
 
         if (is_link($dst)) {
-            $result->addAction("symlink {$relative} -> $dst");
+            $result->addAction("symlink $relative -> $dst");
             return;
         }
 
-        // Attempt absolute symlink as a second try
         @symlink($src, $dst);
+
         if (is_link($dst)) {
             $result->addAction("symlink $src -> $dst");
             return;
@@ -147,9 +146,10 @@ final readonly class Installer
         if (is_link($path) || is_file($path)) {
             if (@unlink($path) === false) {
                 $result->addError("Failed to remove file: $path");
-            } else {
-                $result->addAction("rm $path");
+                return;
             }
+
+            $result->addAction("rm $path");
             return;
         }
 
@@ -164,7 +164,6 @@ final readonly class Installer
                 return false;
             }
 
-            // Resolve link target relative to dst dir (if relative)
             $dstDir = dirname($dst);
             $resolved = $link;
 
@@ -172,11 +171,9 @@ final readonly class Installer
                 $resolved = Paths::normalize($dstDir . DIRECTORY_SEPARATOR . $link);
             }
 
-            // Compare normalized paths (best-effort)
             return Paths::normalize($resolved) === Paths::normalize($src);
         }
 
-        // If copy mode, compare hashes
         if (is_file($dst) && is_file($src)) {
             return sha1_file($dst) === sha1_file($src);
         }

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace PepperFM\AiGuidelines\Cli;
@@ -21,7 +22,7 @@ final class Application
     public static function run(array $argv): int
     {
         $args = array_values($argv);
-        array_shift($args); // script name
+        array_shift($args);
 
         $command = $args[0] ?? 'init';
         if (str_starts_with($command, '-')) {
@@ -43,53 +44,65 @@ final class Application
         }
 
         return match ($command) {
-            'list' => self::cmdList($opts),
+            'list' => self::cmdList(),
             'sync' => self::cmdSync($opts),
             'init' => self::cmdInit($opts),
             default => self::unknownCommand($command),
         };
     }
 
-    /** @param array<string, mixed> $opts */
-    private static function cmdList(array $opts): int
+    private static function cmdList(): int
     {
         $rows = [];
         foreach (Presets::all() as $id => $label) {
-            $rows[] = [$id, $label];
+            $rows[] = [$id, $label, Presets::flatFileName($id)];
         }
 
-        // If prompts fallback is not supported, table() still prints a readable output.
-        table(headers: ['Preset', 'Description'], rows: $rows);
+        table(headers: ['Preset', 'Description', 'Flat filename'], rows: $rows);
 
         return 0;
     }
 
-    /** @param array<string, mixed> $opts */
+    /**
+     * @param array<string, mixed> $opts
+     */
     private static function cmdInit(array $opts): int
     {
         $noInteraction = (bool) ($opts['no_interaction'] ?? false);
 
         $projectRoot = Paths::projectRoot(getcwd() ?: '.');
-        $configPath = self::configPath($projectRoot, (string) ($opts['config'] ?? '.pfm-guidelines.json'));
+
+        $configPath = self::resolveDefaultConfigPath(
+            projectRoot: $projectRoot,
+            explicit: isset($opts['config']) ? (string) $opts['config'] : null,
+        );
 
         if ($noInteraction) {
-            // In no-interaction mode, init behaves like sync with explicit flags.
             return self::cmdSync($opts + ['config' => $configPath, 'write_config' => true]);
         }
 
         intro('PepperFM: установка AI‑гайдлайнов в .ai/guidelines');
 
-        $presetOptions = Presets::all();
-
         $presets = multiselect(
             label: 'Какие пресеты подключить?',
-            options: $presetOptions,
+            options: Presets::all(),
+            default: ['laravel'],
             required: 'Нужно выбрать хотя бы один пресет.',
             hint: 'Можно выбрать несколько пунктов.',
         );
 
         /** @var array<int, string> $presets */
         $presets = Presets::filterValid($presets);
+
+        $layout = select(
+            label: 'Как раскладывать файлы в .ai/guidelines?',
+            options: [
+                'flat-numbered' => 'Вариант B: плоско, с номерами (10-laravel.md, 11-nuxt-ui.md...) — проще контролировать порядок',
+                'folders' => 'Папками: <preset>/core.md (чистая структура, но порядок зависит от сборщика)',
+            ],
+            default: (string) ($opts['layout'] ?? 'flat-numbered'),
+            hint: 'Если тебе важен приоритет/порядок при сборке — выбирай flat-numbered.',
+        );
 
         $mode = select(
             label: 'Режим установки',
@@ -98,14 +111,16 @@ final class Application
                 'copy' => 'copy (надёжно, без symlink)',
             ],
             default: (string) ($opts['mode'] ?? 'symlink'),
-            hint: 'Если symlink не поддерживается, мы автоматически откатимся на copy.',
         );
+
+        $defaultTarget = $layout === 'flat-numbered'
+            ? (string) ($opts['target'] ?? '.ai/guidelines')
+            : (string) ($opts['target'] ?? '.ai/guidelines/pepperfm');
 
         $target = text(
             label: 'Куда положить гайдлайны внутри проекта?',
-            default: (string) ($opts['target'] ?? '.ai/guidelines'),
+            default: $defaultTarget,
             required: true,
-            hint: 'Boost читает .ai/guidelines/** и использует их при сборке AGENTS.md.',
         );
 
         $writeConfig = confirm(
@@ -115,6 +130,7 @@ final class Application
 
         $config = new Config(
             mode: (string) $mode,
+            layout: (string) $layout,
             target: (string) $target,
             presets: $presets,
         );
@@ -125,25 +141,28 @@ final class Application
                 return 1;
             }
             info("Конфиг сохранён: $configPath");
-        } else {
-            note('Конфиг не сохранён — можно запускать sync с параметрами.');
         }
 
         return self::doSync($projectRoot, $configPath, $config, $opts);
     }
 
-    /** @param array<string, mixed> $opts */
+    /**
+     * @param array<string, mixed> $opts
+     */
     private static function cmdSync(array $opts): int
     {
         $projectRoot = Paths::projectRoot(getcwd() ?: '.');
-        $configRel = (string) ($opts['config'] ?? '.pfm-guidelines.json');
-        $configPath = self::configPath($projectRoot, $configRel);
+
+        $configPath = self::resolveDefaultConfigPath(
+            projectRoot: $projectRoot,
+            explicit: isset($opts['config']) ? (string) $opts['config'] : null,
+        );
 
         $noInteraction = (bool) ($opts['no_interaction'] ?? false);
         $writeConfig = (bool) ($opts['write_config'] ?? false);
 
-        // 1) Try config first
         $config = null;
+
         if (is_file($configPath)) {
             $config = self::readConfig($configPath);
             if ($config === null) {
@@ -152,13 +171,12 @@ final class Application
             }
         }
 
-        // 2) Override config from CLI flags
         $presetsFromFlags = self::parsePresets($opts);
         $mode = isset($opts['mode']) ? (string) $opts['mode'] : null;
+        $layout = isset($opts['layout']) ? (string) $opts['layout'] : null;
         $target = isset($opts['target']) ? (string) $opts['target'] : null;
 
         if ($config === null) {
-            // No config yet; require flags or interactive
             if ($presetsFromFlags === [] && !$noInteraction) {
                 intro('PepperFM: sync без конфига — выбери пресеты');
                 $presetsFromFlags = multiselect(
@@ -177,6 +195,7 @@ final class Application
 
             $config = new Config(
                 mode: $mode ?? 'symlink',
+                layout: $layout ?? 'flat-numbered',
                 target: $target ?? '.ai/guidelines',
                 presets: $presetsFromFlags,
             );
@@ -185,12 +204,14 @@ final class Application
                 info("Конфиг сохранён: $configPath");
             }
         } else {
-            // Apply overrides to existing config
             if ($presetsFromFlags !== []) {
                 $config->presets = Presets::filterValid($presetsFromFlags);
             }
             if ($mode !== null) {
                 $config->mode = $mode;
+            }
+            if ($layout !== null) {
+                $config->layout = $layout;
             }
             if ($target !== null) {
                 $config->target = $target;
@@ -204,14 +225,16 @@ final class Application
         return self::doSync($projectRoot, $configPath, $config, $opts);
     }
 
-    /** @param array<string, mixed> $opts */
+    /**
+     * @param array<string, mixed> $opts
+     */
     private static function doSync(string $projectRoot, string $configPath, Config $config, array $opts): int
     {
         $force = (bool) ($opts['force'] ?? false);
         $dryRun = (bool) ($opts['dry_run'] ?? false);
 
         note('Выбранные пресеты: ' . implode(', ', $config->presets));
-        note('Режим: ' . $config->mode . ' | target: ' . $config->target);
+        note('Layout: ' . $config->layout . ' | Mode: ' . $config->mode . ' | Target: ' . $config->target);
 
         $installer = new Installer(
             projectRoot: $projectRoot,
@@ -239,7 +262,6 @@ final class Application
             return 1;
         }
 
-        // Offer to run boost:update if artisan exists (interactive only)
         $artisan = $projectRoot . DIRECTORY_SEPARATOR . 'artisan';
         if (!$dryRun && is_file($artisan)) {
             warning('Не забудьте запустить php artisan boost:update');
@@ -253,6 +275,7 @@ final class Application
     {
         error("Неизвестная команда: $command");
         self::printHelp();
+
         return 1;
     }
 
@@ -264,7 +287,7 @@ final class Application
     private static function printHelp(): void
     {
         $text = <<<TXT
-pfm-guidelines — установка личных AI‑гайдлайнов в .ai/guidelines
+pfm-guidelines / pepper-guidelines — установка личных AI‑гайдлайнов в .ai/guidelines
 
 Usage:
   pfm-guidelines                 (alias для init)
@@ -277,39 +300,32 @@ Options (init/sync):
   --presets=laravel,nuxt-ui,element-plus   список пресетов (через запятую)
   --preset=laravel                         можно повторять несколько раз
   --mode=symlink|copy
-  --target=.ai/guidelines/pepperfm
+  --layout=flat-numbered|folders
+  --target=.ai/guidelines
   --config=.pfm-guidelines.json
-  --write-config                           записать/обновить конфиг (sync/init в no-interaction)
-  --force                                  перезаписывать существующие файлы
-  --dry-run                                только показать действия
-  --no-interaction                         без prompts (для CI)
-  --boost-update                           после sync запустить php artisan boost:update (если возможно)
+  --write-config
+  --force
+  --dry-run
+  --no-interaction
+  --boost-update
 
 Examples:
   php vendor/bin/pfm-guidelines init
   php vendor/bin/pfm-guidelines sync
-  php vendor/bin/pfm-guidelines sync --no-interaction --mode=copy --presets=laravel,element-plus --write-config
+  php vendor/bin/pfm-guidelines sync --no-interaction --layout=flat-numbered --mode=copy --presets=laravel,element-plus --write-config
 
 TXT;
 
-        // alert() prints a block. In fallback terminals it becomes a simple output.
         alert($text);
     }
 
     /**
-     * Very small argv parser:
-     * - supports --key=value
-     * - supports --key value
-     * - supports --flag
-     *
      * @param array<int, string> $args
      * @return array<string, mixed>
      */
     private static function parseOptions(array $args): array
     {
-        $opts = [
-            'preset' => [],
-        ];
+        $opts = ['preset' => []];
 
         foreach ($args as $i => $iValue) {
             $arg = $iValue;
@@ -318,24 +334,20 @@ TXT;
                 continue;
             }
 
-            // --key=value
             if (str_starts_with($arg, '--') && str_contains($arg, '=')) {
                 [$k, $v] = explode('=', substr($arg, 2), 2);
                 self::pushOpt($opts, $k, $v);
                 continue;
             }
 
-            // --flag
             if (str_starts_with($arg, '--')) {
                 $k = substr($arg, 2);
 
-                // flags
                 if (in_array($k, ['force', 'dry-run', 'no-interaction', 'help', 'write-config', 'boost-update'], true)) {
                     $opts[str_replace('-', '_', $k)] = true;
                     continue;
                 }
 
-                // --key value
                 $v = $args[$i + 1] ?? null;
                 if ($v !== null && !str_starts_with($v, '-')) {
                     $i++;
@@ -343,12 +355,10 @@ TXT;
                     continue;
                 }
 
-                // default: treat as boolean flag
                 $opts[str_replace('-', '_', $k)] = true;
                 continue;
             }
 
-            // -h / -V (minimal)
             if ($arg === '-h') {
                 $opts['help'] = true;
             }
@@ -360,7 +370,9 @@ TXT;
         return $opts;
     }
 
-    /** @param array<string, mixed> $opts */
+    /**
+     * @param array<string, mixed> $opts
+     */
     private static function pushOpt(array &$opts, string $key, string $value): void
     {
         $keyNorm = str_replace('-', '_', $key);
@@ -373,20 +385,16 @@ TXT;
         $opts[$keyNorm] = $value;
     }
 
-    /** @param array<string, mixed> $opts
-     *  @return array<int, string>
+    /**
+     * @param array<string, mixed> $opts
+     * @return array<int, string>
      */
     private static function parsePresets(array $opts): array
     {
         $presets = [];
 
         if (isset($opts['presets'])) {
-            $presets = array_merge(
-                $presets,
-                array_filter(
-                    array_map('trim', explode(',', (string) $opts['presets']))
-                )
-            );
+            $presets = array_merge($presets, array_filter(array_map('trim', explode(',', (string) $opts['presets']))));
         }
 
         if (isset($opts['preset']) && is_array($opts['preset'])) {
@@ -396,6 +404,25 @@ TXT;
         }
 
         return Presets::filterValid($presets);
+    }
+
+    private static function resolveDefaultConfigPath(string $projectRoot, ?string $explicit): string
+    {
+        if ($explicit !== null && $explicit !== '') {
+            return self::configPath($projectRoot, $explicit);
+        }
+
+        $pfm = Paths::normalize($projectRoot . DIRECTORY_SEPARATOR . '.pfm-guidelines.json');
+        if (is_file($pfm)) {
+            return $pfm;
+        }
+
+        $legacy = Paths::normalize($projectRoot . DIRECTORY_SEPARATOR . '.pepper-guidelines.json');
+        if (is_file($legacy)) {
+            return $legacy;
+        }
+
+        return $pfm;
     }
 
     private static function configPath(string $projectRoot, string $configRel): string

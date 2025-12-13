@@ -5,17 +5,35 @@ namespace PepperFM\AiGuidelines\Cli;
 
 final class Presets
 {
-    /** @var array<string, string> */
+    /**
+     * Preset definitions.
+     *
+     * - label: human friendly name
+     * - flat: destination filename in "flat-numbered" layout
+     *
+     * @var array<string, array{label: string, flat: string}>
+     */
     private const array PRESETS = [
-        'laravel' => 'Laravel/Sail/MCP (Codex overrides)',
-        'nuxt-ui' => 'Nuxt UI (Vue/Vite) inside Laravel + Inertia',
-        'element-plus' => 'Element Plus + Vue 3',
+        'laravel' => [
+            'label' => 'Laravel/Sail/MCP (Codex overrides)',
+            'flat' => '10-laravel.md',
+        ],
+        'nuxt-ui' => [
+            'label' => 'Nuxt UI (Vue/Vite) inside Laravel + Inertia',
+            'flat' => '11-nuxt-ui.md',
+        ],
+        'element-plus' => [
+            'label' => 'Element Plus + Vue 3',
+            'flat' => '12-element-plus.md',
+        ],
     ];
 
     /** @return array<string, string> */
     public static function all(): array
     {
-        return self::PRESETS;
+        return array_map(static function ($def) {
+            return $def['label'];
+        }, self::PRESETS);
     }
 
     public static function exists(string $presetId): bool
@@ -23,8 +41,14 @@ final class Presets
         return array_key_exists($presetId, self::PRESETS);
     }
 
-    /** @param array<int, string> $presetIds
-     *  @return array<int, string>
+    public static function flatFileName(string $presetId): string
+    {
+        return self::PRESETS[$presetId]['flat'] ?? ($presetId . '.md');
+    }
+
+    /**
+     * @param array<int, string> $presetIds
+     * @return array<int, string>
      */
     public static function filterValid(array $presetIds): array
     {
@@ -34,6 +58,7 @@ final class Presets
                 $out[] = $id;
             }
         }
+
         return array_values(array_unique($out));
     }
 }
