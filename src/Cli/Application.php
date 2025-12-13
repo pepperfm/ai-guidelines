@@ -242,7 +242,7 @@ final class Application
         // Offer to run boost:update if artisan exists (interactive only)
         $artisan = $projectRoot . DIRECTORY_SEPARATOR . 'artisan';
         if (!$dryRun && is_file($artisan)) {
-            info('Не забудьте запустить php artisan boost:update');
+            warning('Не забудьте запустить php artisan boost:update');
         }
 
         outro('Готово.');
