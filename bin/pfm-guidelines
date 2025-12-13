@@ -1,0 +1,9 @@
+#!/usr/bin/env php
+<?php
+declare(strict_types=1);
+
+// Composer proxy scripts define this variable to point at the correct autoloader.
+// Fall back to the standard vendor autoload when running from source.
+require $_composer_autoload_path ?? __DIR__ . '/../vendor/autoload.php';
+
+exit(PepperFM\AiGuidelines\Cli\Application::run($_SERVER['argv']));
