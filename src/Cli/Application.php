@@ -104,13 +104,13 @@ final class Application
 
         $target = text(
             label: 'Куда положить гайдлайны внутри проекта?',
-            default: (string) ($opts['target'] ?? '.ai/guidelines/pepperfm'),
+            default: (string) ($opts['target'] ?? '.ai/guidelines'),
             required: true,
             hint: 'Boost читает .ai/guidelines/** и использует их при сборке AGENTS.md.',
         );
 
         $writeConfig = confirm(
-            label: "Сохранить конфиг в {$configPath}?",
+            label: "Сохранить конфиг в $configPath?",
             default: true,
         );
 
@@ -122,10 +122,10 @@ final class Application
 
         if ($writeConfig) {
             if (!self::writeConfig($configPath, $config, (bool) ($opts['dry_run'] ?? false))) {
-                error("Не удалось записать конфиг: {$configPath}");
+                error("Не удалось записать конфиг: $configPath");
                 return 1;
             }
-            info("Конфиг сохранён: {$configPath}");
+            info("Конфиг сохранён: $configPath");
         } else {
             note('Конфиг не сохранён — можно запускать sync с параметрами.');
         }
@@ -148,7 +148,7 @@ final class Application
         if (is_file($configPath)) {
             $config = self::readConfig($configPath);
             if ($config === null) {
-                error("Конфиг повреждён или не читается: {$configPath}");
+                error("Конфиг повреждён или не читается: $configPath");
                 return 1;
             }
         }
@@ -178,12 +178,12 @@ final class Application
 
             $config = new Config(
                 mode: $mode ?? 'symlink',
-                target: $target ?? '.ai/guidelines/pepperfm',
+                target: $target ?? '.ai/guidelines',
                 presets: $presetsFromFlags,
             );
 
             if ($writeConfig && self::writeConfig($configPath, $config, (bool) ($opts['dry_run'] ?? false))) {
-                info("Конфиг сохранён: {$configPath}");
+                info("Конфиг сохранён: $configPath");
             }
         } else {
             // Apply overrides to existing config
@@ -198,7 +198,7 @@ final class Application
             }
 
             if ($writeConfig && self::writeConfig($configPath, $config, (bool) ($opts['dry_run'] ?? false))) {
-                info("Конфиг обновлён: {$configPath}");
+                info("Конфиг обновлён: $configPath");
             }
         }
 
@@ -245,13 +245,12 @@ final class Application
         $runBoost = (bool) ($opts['boost_update'] ?? false);
 
         $artisan = $projectRoot . DIRECTORY_SEPARATOR . 'artisan';
-        if (is_file($artisan) && !$dryRun) {
+        if (!$dryRun && is_file($artisan)) {
             if ($runBoost) {
                 self::runBoostUpdate($projectRoot);
             } elseif (!$noInteraction) {
                 $do = confirm(
                     label: 'Запустить php artisan boost:update сейчас?',
-                    default: true,
                     hint: 'Чтобы Boost пересобрал AGENTS.md из .ai/guidelines/*',
                 );
                 if ($do) {
@@ -277,13 +276,13 @@ final class Application
         }
 
         if ($code !== 0) {
-            warning("boost:update завершился с кодом {$code}");
+            warning("boost:update завершился с кодом $code");
         }
     }
 
     private static function unknownCommand(string $command): int
     {
-        error("Неизвестная команда: {$command}");
+        error("Неизвестная команда: $command");
         self::printHelp();
         return 1;
     }
@@ -343,8 +342,8 @@ TXT;
             'preset' => [],
         ];
 
-        for ($i = 0; $i < count($args); $i++) {
-            $arg = $args[$i];
+        foreach ($args as $i => $iValue) {
+            $arg = $iValue;
 
             if (!str_starts_with($arg, '-')) {
                 continue;
@@ -413,7 +412,12 @@ TXT;
         $presets = [];
 
         if (isset($opts['presets'])) {
-            $presets = array_merge($presets, array_filter(array_map('trim', explode(',', (string) $opts['presets']))));
+            $presets = array_merge(
+                $presets,
+                array_filter(
+                    array_map('trim', explode(',', (string) $opts['presets']))
+                )
+            );
         }
 
         if (isset($opts['preset']) && is_array($opts['preset'])) {
@@ -458,7 +462,7 @@ TXT;
         $json .= "\n";
 
         if ($dryRun) {
-            info("[dry-run] write config: {$path}");
+            info("[dry-run] write config: $path");
             return true;
         }
 

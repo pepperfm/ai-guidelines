@@ -5,7 +5,7 @@ namespace PepperFM\AiGuidelines\Cli;
 
 final class Paths
 {
-    /**
+    /*
      * Return absolute path to package base directory (the directory that contains composer.json).
      */
     public static function packageBase(): string
@@ -14,7 +14,7 @@ final class Paths
         return dirname(__DIR__, 2);
     }
 
-    /**
+    /*
      * Try to find project root by walking up from current working directory until composer.json is found.
      * If not found, returns the original working directory.
      */
@@ -45,7 +45,7 @@ final class Paths
         return $path;
     }
 
-    /**
+    /*
      * Make a relative path from $fromDir (directory) to $toPath (file or directory).
      * If paths are on different roots (e.g. different Windows drives), returns $toPath as-is.
      */

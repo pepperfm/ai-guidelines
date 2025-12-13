@@ -3,12 +3,12 @@ declare(strict_types=1);
 
 namespace PepperFM\AiGuidelines\Cli;
 
-final class Installer
+final readonly class Installer
 {
     public function __construct(
-        private readonly string $projectRoot,
-        private readonly bool $force = false,
-        private readonly bool $dryRun = false,
+        private string $projectRoot,
+        private bool $force = false,
+        private bool $dryRun = false,
     ) {}
 
     public function install(Config $config): InstallResult
@@ -28,7 +28,7 @@ final class Installer
             $dst = $dstDir . DIRECTORY_SEPARATOR . 'core.md';
 
             if (!is_file($src)) {
-                $result->addError("Preset '{$presetId}': source not found: {$src}");
+                $result->addError("Preset '{$presetId}': source not found: $src");
                 continue;
             }
 
@@ -52,14 +52,14 @@ final class Installer
         }
 
         if ($this->dryRun) {
-            $result->addAction("[dry-run] mkdir -p {$dir}");
+            $result->addAction("[dry-run] mkdir -p $dir");
             return;
         }
 
         if (@mkdir($dir, 0777, true) === false && !is_dir($dir)) {
-            $result->addError("Failed to create directory: {$dir}");
+            $result->addError("Failed to create directory: $dir");
         } else {
-            $result->addAction("mkdir -p {$dir}");
+            $result->addAction("mkdir -p $dir");
         }
     }
 
@@ -87,7 +87,7 @@ final class Installer
             }
 
             // If symlink failed, fallback to copy
-            $result->addWarning("Symlink failed for {$dst}. Falling back to copy.");
+            $result->addWarning("Symlink failed for $dst. Falling back to copy.");
         }
 
         $this->copyFile($src, $dst, $result);
@@ -99,7 +99,7 @@ final class Installer
         $relative = Paths::relative($dstDir, $src);
 
         if ($this->dryRun) {
-            $result->addAction("[dry-run] symlink {$relative} -> {$dst}");
+            $result->addAction("[dry-run] symlink {$relative} -> $dst");
             return;
         }
 
@@ -107,52 +107,52 @@ final class Installer
         @symlink($relative, $dst);
 
         if (is_link($dst)) {
-            $result->addAction("symlink {$relative} -> {$dst}");
+            $result->addAction("symlink {$relative} -> $dst");
             return;
         }
 
         // Attempt absolute symlink as a second try
         @symlink($src, $dst);
         if (is_link($dst)) {
-            $result->addAction("symlink {$src} -> {$dst}");
+            $result->addAction("symlink $src -> $dst");
             return;
         }
 
-        $result->addWarning("Unable to create symlink for {$dst} (src: {$src})");
+        $result->addWarning("Unable to create symlink for $dst (src: $src)");
     }
 
     private function copyFile(string $src, string $dst, InstallResult $result): void
     {
         if ($this->dryRun) {
-            $result->addAction("[dry-run] copy {$src} -> {$dst}");
+            $result->addAction("[dry-run] copy $src -> $dst");
             return;
         }
 
         if (@copy($src, $dst) === false) {
-            $result->addError("Failed to copy {$src} -> {$dst}");
+            $result->addError("Failed to copy $src -> $dst");
             return;
         }
 
-        $result->addAction("copy {$src} -> {$dst}");
+        $result->addAction("copy $src -> $dst");
     }
 
     private function remove(string $path, InstallResult $result): void
     {
         if ($this->dryRun) {
-            $result->addAction("[dry-run] rm {$path}");
+            $result->addAction("[dry-run] rm $path");
             return;
         }
 
         if (is_link($path) || is_file($path)) {
             if (@unlink($path) === false) {
-                $result->addError("Failed to remove file: {$path}");
+                $result->addError("Failed to remove file: $path");
             } else {
-                $result->addAction("rm {$path}");
+                $result->addAction("rm $path");
             }
             return;
         }
 
-        $result->addError("Cannot remove '{$path}' (not a file/symlink).");
+        $result->addError("Cannot remove '$path' (not a file/symlink).");
     }
 
     private function isAlreadyCorrect(Config $config, string $src, string $dst): bool

@@ -5,11 +5,11 @@ namespace PepperFM\AiGuidelines\Cli;
 
 final class Config
 {
-    public const VERSION = 1;
+    public const int VERSION = 1;
 
     public function __construct(
         public string $mode = 'symlink', // symlink|copy
-        public string $target = '.ai/guidelines/pepperfm',
+        public string $target = '.ai/guidelines',
         /** @var array<int, string> */
         public array $presets = ['laravel'],
     ) {}
@@ -30,7 +30,7 @@ final class Config
     public static function fromArray(array $data): self
     {
         $mode = is_string($data['mode'] ?? null) ? (string) $data['mode'] : 'symlink';
-        $target = is_string($data['target'] ?? null) ? (string) $data['target'] : '.ai/guidelines/pepperfm';
+        $target = is_string($data['target'] ?? null) ? (string) $data['target'] : '.ai/guidelines';
         $presets = is_array($data['presets'] ?? null) ? array_values($data['presets']) : ['laravel'];
 
         $presets = array_map('strval', $presets);

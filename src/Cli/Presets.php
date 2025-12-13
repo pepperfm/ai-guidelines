@@ -6,7 +6,7 @@ namespace PepperFM\AiGuidelines\Cli;
 final class Presets
 {
     /** @var array<string, string> */
-    private const PRESETS = [
+    private const array PRESETS = [
         'laravel' => 'Laravel/Sail/MCP (Codex overrides)',
         'nuxt-ui' => 'Nuxt UI (Vue/Vite) inside Laravel + Inertia',
         'element-plus' => 'Element Plus + Vue 3',

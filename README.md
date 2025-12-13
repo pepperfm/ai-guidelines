@@ -34,13 +34,13 @@ php vendor/bin/pfm-guidelines init
 
 1) спросит какие пресеты подключить,
 2) спросит режим (symlink/copy),
-3) спросит путь назначения (по умолчанию: `.ai/guidelines/pepperfm`),
+3) спросит путь назначения (по умолчанию: `.ai/guidelines`),
 4) создаст/обновит файлы вида:
 
 ```text
-.ai/guidelines/pepperfm/laravel/core.md
-.ai/guidelines/pepperfm/nuxt-ui/core.md
-.ai/guidelines/pepperfm/element-plus/core.md
+.ai/guidelines/laravel/core.md
+.ai/guidelines/nuxt-ui/core.md
+.ai/guidelines/element-plus/core.md
 ```
 
 Также создаст конфиг в корне проекта: `.pfm-guidelines.json`.
@@ -61,7 +61,7 @@ php vendor/bin/pfm-guidelines sync --no-interaction --mode=copy --presets=larave
 
 - `--presets=laravel,nuxt-ui,element-plus`
 - `--mode=symlink|copy`
-- `--target=.ai/guidelines/pepperfm`
+- `--target=.ai/guidelines`
 - `--force` (перезаписывать существующие файлы)
 - `--dry-run` (ничего не менять, только показать действия)
 - `--config=.pfm-guidelines.json` (путь к конфигу)
