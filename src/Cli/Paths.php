@@ -1,11 +1,12 @@
 <?php
+
 declare(strict_types=1);
 
 namespace PepperFM\AiGuidelines\Cli;
 
 final class Paths
 {
-    /**
+    /*
      * Return absolute path to package base directory (the directory that contains composer.json).
      */
     public static function packageBase(): string
@@ -14,7 +15,7 @@ final class Paths
         return dirname(__DIR__, 2);
     }
 
-    /**
+    /*
      * Try to find project root by walking up from current working directory until composer.json is found.
      * If not found, returns the original working directory.
      */
@@ -45,7 +46,7 @@ final class Paths
         return $path;
     }
 
-    /**
+    /*
      * Make a relative path from $fromDir (directory) to $toPath (file or directory).
      * If paths are on different roots (e.g. different Windows drives), returns $toPath as-is.
      */
@@ -58,13 +59,12 @@ final class Paths
         [$toRoot, $toRest] = self::splitRoot($toPath);
 
         if ($fromRoot !== $toRoot) {
-            return $toPath; // can't make relative
+            return $toPath;
         }
 
         $fromParts = self::splitParts($fromRest);
         $toParts = self::splitParts($toRest);
 
-        // Remove common prefix
         while ($fromParts && $toParts && $fromParts[0] === $toParts[0]) {
             array_shift($fromParts);
             array_shift($toParts);
@@ -85,11 +85,12 @@ final class Paths
      */
     private static function splitRoot(string $path): array
     {
-        // Windows drive root like C:\
-        if (preg_match('/^[A-Za-z]:\\\\/?/', $path) === 1) {
+        // Windows drive root like C:\ or C:/
+        if (preg_match('~^[A-Za-z]:[\\\\/]~', $path) === 1) {
             $root = substr($path, 0, 2) . DIRECTORY_SEPARATOR;
             $rest = substr($path, 2);
             $rest = ltrim($rest, DIRECTORY_SEPARATOR);
+
             return [$root, $rest];
         }
 
@@ -98,7 +99,6 @@ final class Paths
             return [DIRECTORY_SEPARATOR, ltrim($path, DIRECTORY_SEPARATOR)];
         }
 
-        // Relative paths: treat root as empty
         return ['', $path];
     }
 
@@ -111,14 +111,15 @@ final class Paths
         if ($path === '') {
             return [];
         }
+
         $parts = explode(DIRECTORY_SEPARATOR, $path);
-        // filter empty
         $out = [];
         foreach ($parts as $p) {
             if ($p !== '' && $p !== '.') {
                 $out[] = $p;
             }
         }
+
         return $out;
     }
 }

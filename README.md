@@ -17,7 +17,7 @@ CLI умеет:
 ## Установка
 
 ```bash
-composer require --dev pepperfm/ai-guidelines
+composer r --dev pepperfm/ai-guidelines
 ```
 
 ## Быстрый старт (интерактивно)
@@ -25,22 +25,22 @@ composer require --dev pepperfm/ai-guidelines
 Из корня проекта:
 
 ```bash
-php vendor/bin/pfm-guidelines
+vendor/bin/pfm-guidelines
 # или
-php vendor/bin/pfm-guidelines init
+vendor/bin/pfm-guidelines init
 ```
 
 Команда:
 
 1) спросит какие пресеты подключить,
 2) спросит режим (symlink/copy),
-3) спросит путь назначения (по умолчанию: `.ai/guidelines/pepperfm`),
+3) спросит путь назначения (по умолчанию: `.ai/guidelines`),
 4) создаст/обновит файлы вида:
 
 ```text
-.ai/guidelines/pepperfm/laravel/core.md
-.ai/guidelines/pepperfm/nuxt-ui/core.md
-.ai/guidelines/pepperfm/element-plus/core.md
+.ai/guidelines/laravel/core.md
+.ai/guidelines/nuxt-ui/core.md
+.ai/guidelines/element-plus/core.md
 ```
 
 Также создаст конфиг в корне проекта: `.pfm-guidelines.json`.
@@ -48,20 +48,20 @@ php vendor/bin/pfm-guidelines init
 ## Синхронизация (после composer update)
 
 ```bash
-php vendor/bin/pfm-guidelines sync
+vendor/bin/pfm-guidelines sync
 ```
 
 ## Без интерактива (CI / scripts)
 
 ```bash
-php vendor/bin/pfm-guidelines sync --no-interaction --mode=copy --presets=laravel,element-plus
+vendor/bin/pfm-guidelines sync --no-interaction --mode=copy --presets=laravel,element-plus
 ```
 
 Доступные параметры:
 
 - `--presets=laravel,nuxt-ui,element-plus`
 - `--mode=symlink|copy`
-- `--target=.ai/guidelines/pepperfm`
+- `--target=.ai/guidelines`
 - `--force` (перезаписывать существующие файлы)
 - `--dry-run` (ничего не менять, только показать действия)
 - `--config=.pfm-guidelines.json` (путь к конфигу)
