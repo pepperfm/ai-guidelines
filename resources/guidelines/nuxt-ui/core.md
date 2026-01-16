@@ -277,6 +277,42 @@ function close() {
 - Сабмит через `@inertiajs/vue3` (`router.post/put/delete` или `useForm`), ошибки сервера маппим в поля.
 - Кнопки сабмита — с `:loading`/`disabled` на pending.
 
+
+### 2.5 Модалки: сдвиг страницы из‑за scroll‑lock (MUST)
+
+**Симптом:** при открытии `UModal` пропадает полоса прокрутки, фон «прыгает» из‑за добавленного `padding-right` на `body`.
+
+**Причина:** Reka UI при блокировке скролла компенсирует ширину скроллбара через `body` padding/margin.
+
+**Решение (обязательное для фронта):**
+
+1) Обернуть сайт в `UApp` и отключить компенсацию padding/margin:
+
+```vue
+<template>
+  <UApp :scroll-body="{ padding: 0, margin: 0 }" :toaster="null">
+    <slot />
+  </UApp>
+</template>
+```
+
+2) Зафиксировать видимый скроллбар на фронте (без «гаттера»):
+
+```scss
+html.site-scroll {
+  overflow-y: scroll;
+}
+```
+
+3) Добавить класс `site-scroll` на `<html>` в публичном лейауте:
+
+```ts
+const root = document.documentElement
+root.classList.add('site-scroll')
+```
+
+> **Не делаем** кастомные overlay‑слои вместо `UModal` ради скролла — используем стандартный overlay и настраиваем `UApp`.
+
 ---
 
 ## 3) Темизация
