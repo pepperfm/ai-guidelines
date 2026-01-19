@@ -6,7 +6,7 @@ namespace PepperFM\AiGuidelines\Cli;
 
 final class Config
 {
-    public const int VERSION = 2;
+    public const int VERSION = 3;
 
     public function __construct(
         public string $mode = 'symlink', // symlink|copy
@@ -14,6 +14,7 @@ final class Config
         public string $target = '.ai/guidelines',
         /** @var array<int, string> */
         public array $presets = ['laravel'],
+        public bool $laravelMacros = false,
     ) {
     }
 
@@ -28,6 +29,7 @@ final class Config
             'layout' => $this->layout,
             'target' => $this->target,
             'presets' => array_values($this->presets),
+            'laravel_macros' => $this->laravelMacros,
         ];
     }
 
@@ -36,6 +38,7 @@ final class Config
         $mode = is_string($data['mode'] ?? null) ? (string) $data['mode'] : 'symlink';
         $layout = is_string($data['layout'] ?? null) ? (string) $data['layout'] : 'flat-numbered';
         $target = is_string($data['target'] ?? null) ? (string) $data['target'] : '.ai/guidelines';
+        $laravelMacros = (bool) ($data['laravel_macros'] ?? false);
 
         $presets = is_array($data['presets'] ?? null) ? array_values($data['presets']) : ['laravel'];
         $presets = array_map('strval', $presets);
@@ -53,6 +56,7 @@ final class Config
             layout: $layout,
             target: $target,
             presets: $presets ?: ['laravel'],
+            laravelMacros: $laravelMacros,
         );
     }
 

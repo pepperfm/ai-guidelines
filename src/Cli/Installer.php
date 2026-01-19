@@ -34,6 +34,9 @@ final readonly class Installer
             if ($config->isFlat()) {
                 $dst = $targetBase . DIRECTORY_SEPARATOR . Presets::flatFileName($presetId);
                 $this->linkOrCopy($config, $src, $dst, $result);
+                if ($presetId === 'laravel') {
+                    $this->installLaravelMacros($config, $resourceBase, $targetBase, null, $result);
+                }
                 continue;
             }
 
@@ -42,9 +45,37 @@ final readonly class Installer
 
             $this->ensureDir($dstDir, $result);
             $this->linkOrCopy($config, $src, $dst, $result);
+            if ($presetId === 'laravel') {
+                $this->installLaravelMacros($config, $resourceBase, $targetBase, $dstDir, $result);
+            }
         }
 
         return $result;
+    }
+
+    private function installLaravelMacros(
+        Config $config,
+        string $resourceBase,
+        string $targetBase,
+        ?string $dstDir,
+        InstallResult $result
+    ): void {
+        if (!$config->laravelMacros) {
+            return;
+        }
+
+        $macrosSrc = $resourceBase . DIRECTORY_SEPARATOR . 'laravel' . DIRECTORY_SEPARATOR . 'macros.md';
+        if (!is_file($macrosSrc)) {
+            $result->addError("Preset 'laravel' macros: source not found: $macrosSrc");
+            return;
+        }
+
+        $macrosDst = $config->isFlat()
+            ? $targetBase . DIRECTORY_SEPARATOR . Presets::laravelMacrosFlatFileName()
+            : (($dstDir ?? $targetBase . DIRECTORY_SEPARATOR . 'laravel') . DIRECTORY_SEPARATOR . 'macros.md');
+
+        $this->ensureDir(dirname($macrosDst), $result);
+        $this->linkOrCopy($config, $macrosSrc, $macrosDst, $result);
     }
 
     private function ensureDir(string $dir, InstallResult $result): void

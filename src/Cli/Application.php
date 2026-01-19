@@ -78,7 +78,7 @@ final class Application
         );
 
         if ($noInteraction) {
-            return self::cmdSync($opts + ['config' => $configPath, 'write_config' => true]);
+            return self::cmdSync($opts + ['config' => $configPath, 'write_config' => false]);
         }
 
         intro('PepperFM: установка AI‑гайдлайнов в .ai/guidelines');
@@ -93,6 +93,14 @@ final class Application
 
         /** @var array<int, string> $presets */
         $presets = Presets::filterValid($presets);
+
+        $laravelMacrosDefault = self::boolOpt($opts, 'laravel_macros') ?? false;
+        $laravelMacros = in_array('laravel', $presets, true)
+            ? confirm(
+                label: 'Публиковать файл laravel/macros.md?',
+                default: $laravelMacrosDefault,
+            )
+            : false;
 
         $layout = select(
             label: 'Как раскладывать файлы в .ai/guidelines?',
@@ -133,6 +141,7 @@ final class Application
             layout: (string) $layout,
             target: (string) $target,
             presets: $presets,
+            laravelMacros: $laravelMacros,
         );
 
         if ($writeConfig) {
@@ -175,6 +184,7 @@ final class Application
         $mode = isset($opts['mode']) ? (string) $opts['mode'] : null;
         $layout = isset($opts['layout']) ? (string) $opts['layout'] : null;
         $target = isset($opts['target']) ? (string) $opts['target'] : null;
+        $laravelMacros = self::boolOpt($opts, 'laravel_macros');
 
         if ($config === null) {
             if ($presetsFromFlags === [] && !$noInteraction) {
@@ -198,6 +208,7 @@ final class Application
                 layout: $layout ?? 'flat-numbered',
                 target: $target ?? '.ai/guidelines',
                 presets: $presetsFromFlags,
+                laravelMacros: $laravelMacros ?? false,
             );
 
             if ($writeConfig && self::writeConfig($configPath, $config, (bool) ($opts['dry_run'] ?? false))) {
@@ -215,6 +226,9 @@ final class Application
             }
             if ($target !== null) {
                 $config->target = $target;
+            }
+            if ($laravelMacros !== null) {
+                $config->laravelMacros = $laravelMacros;
             }
 
             if ($writeConfig && self::writeConfig($configPath, $config, (bool) ($opts['dry_run'] ?? false))) {
@@ -302,6 +316,7 @@ Options (init/sync):
   --mode=symlink|copy
   --layout=flat-numbered|folders
   --target=.ai/guidelines
+  --laravel-macros
   --config=.pfm-guidelines.json
   --write-config
   --force
@@ -343,7 +358,7 @@ TXT;
             if (str_starts_with($arg, '--')) {
                 $k = substr($arg, 2);
 
-                if (in_array($k, ['force', 'dry-run', 'no-interaction', 'help', 'write-config', 'boost-update'], true)) {
+                if (in_array($k, ['force', 'dry-run', 'no-interaction', 'help', 'write-config', 'boost-update', 'laravel-macros'], true)) {
                     $opts[str_replace('-', '_', $k)] = true;
                     continue;
                 }
@@ -368,6 +383,32 @@ TXT;
         }
 
         return $opts;
+    }
+
+    /**
+     * @param array<string, mixed> $opts
+     */
+    private static function boolOpt(array $opts, string $key): ?bool
+    {
+        if (!array_key_exists($key, $opts)) {
+            return null;
+        }
+
+        $value = $opts[$key];
+        if (is_bool($value)) {
+            return $value;
+        }
+        if (is_int($value)) {
+            return $value !== 0;
+        }
+        if (is_string($value)) {
+            $filtered = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if ($filtered !== null) {
+                return $filtered;
+            }
+        }
+
+        return (bool) $value;
     }
 
     /**

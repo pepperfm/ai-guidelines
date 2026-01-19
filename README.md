@@ -26,22 +26,23 @@ composer r --dev pepperfm/ai-guidelines
 
 ```bash
 vendor/bin/pfm-guidelines
-# или
-vendor/bin/pfm-guidelines init
 ```
 
 Команда:
 
 1) спросит какие пресеты подключить,
-2) спросит режим (symlink/copy),
-3) спросит путь назначения (по умолчанию: `.ai/guidelines`),
-4) создаст/обновит файлы вида:
+2) если выбран `laravel`, спросит публиковать ли `laravel/macros.md`,
+3) спросит режим (symlink/copy),
+4) спросит путь назначения (по умолчанию: `.ai/guidelines`),
+5) создаст/обновит файлы вида:
 
 ```text
 .ai/guidelines/laravel/core.md
 .ai/guidelines/nuxt-ui/core.md
 .ai/guidelines/element-plus/core.md
 ```
+
+Опционально: `laravel/macros.md` (если включено в prompt).
 
 Также создаст конфиг в корне проекта: `.pfm-guidelines.json`.
 
@@ -62,6 +63,7 @@ vendor/bin/pfm-guidelines sync --no-interaction --mode=copy --presets=laravel,el
 - `--presets=laravel,nuxt-ui,element-plus`
 - `--mode=symlink|copy`
 - `--target=.ai/guidelines`
+- `--laravel-macros`
 - `--force` (перезаписывать существующие файлы)
 - `--dry-run` (ничего не менять, только показать действия)
 - `--config=.pfm-guidelines.json` (путь к конфигу)

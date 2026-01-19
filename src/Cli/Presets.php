@@ -5,6 +5,8 @@ namespace PepperFM\AiGuidelines\Cli;
 
 final class Presets
 {
+    private const string LARAVEL_MACROS_FLAT = '100-laravel-macros.md';
+
     /**
      * Preset definitions.
      *
@@ -44,6 +46,11 @@ final class Presets
     public static function flatFileName(string $presetId): string
     {
         return self::PRESETS[$presetId]['flat'] ?? ($presetId . '.md');
+    }
+
+    public static function laravelMacrosFlatFileName(): string
+    {
+        return self::LARAVEL_MACROS_FLAT;
     }
 
     /**
