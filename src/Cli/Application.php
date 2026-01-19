@@ -95,12 +95,10 @@ final class Application
         $presets = Presets::filterValid($presets);
 
         $laravelMacrosDefault = self::boolOpt($opts, 'laravel_macros') ?? false;
-        $laravelMacros = in_array('laravel', $presets, true)
-            ? confirm(
+        $laravelMacros = in_array('laravel', $presets, true) && confirm(
                 label: 'Публиковать файл laravel/macros.md?',
                 default: $laravelMacrosDefault,
-            )
-            : false;
+            );
 
         $layout = select(
             label: 'Как раскладывать файлы в .ai/guidelines?',
@@ -133,13 +131,12 @@ final class Application
 
         $writeConfig = confirm(
             label: "Сохранить конфиг в $configPath?",
-            default: true,
         );
 
         $config = new Config(
             mode: (string) $mode,
             layout: (string) $layout,
-            target: (string) $target,
+            target: $target,
             presets: $presets,
             laravelMacros: $laravelMacros,
         );

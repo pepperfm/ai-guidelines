@@ -5,7 +5,7 @@ namespace PepperFM\AiGuidelines\Cli;
 
 final class Presets
 {
-    private const string LARAVEL_MACROS_FLAT = '100-laravel-macros.md';
+    private const string LARAVEL_MACROS_FLAT = '011-laravel-macros.md';
 
     /**
      * Preset definitions.
