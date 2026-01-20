@@ -304,7 +304,7 @@ try {
 - Если знаешь точный тип — **предпочитай конкретный** (например, `JsonResponse`), `Responsable` — когда действительно универсально.
 
 ### 4.8 Helpers > Facades (важно)
-Если у Laravel есть helper — используй **его**, а не фасад.
+**MUST:** если у Laravel есть helper — используй **его**, фасад **нельзя**.
 
 | Facade style                          | ✅ Используй helper                         |
 |--------------------------------------|---------------------------------------------|
@@ -313,6 +313,7 @@ try {
 | `DB::table('users')`                 | `db()->table('users')`                      |
 | `DB::transaction(fn () => …)`        | `db()->transaction(fn () => …)`             |
 | `Str::of('text')` / `Str::…`         | `str('text')` / `str()->…`                  |
+| `Str::uuid()` / `Str::random()`      | `str()->uuid()` / `str()->random()`         |
 | `Cache::get('k')` / `Cache::put()`   | `cache()->get('k')` / `cache()->put()`      |
 | `Log::info('msg')`                   | `logger()->info('msg')`                     |
 | `Response::json(...)`                | `response()->json(...)`                     |
@@ -322,6 +323,8 @@ try {
 | `Session::get()/put()`               | `session()->get()/put()`                    |
 | `App::make(Foo::class)`              | `app(Foo::class)`                           |
 | `URL::to(...)`                       | `url(...)`                                  |
+
+`str()` без аргументов проксирует статические методы `Str::`, поэтому фасад не нужен.
 
 > Там, где **нет** эквивалентного helper (например, часть `Storage::`), фасад допустим.
 
