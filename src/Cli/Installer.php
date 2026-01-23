@@ -23,6 +23,17 @@ final readonly class Installer
 
         $this->ensureDir($targetBase, $result);
 
+        $coreSrc = $resourceBase . DIRECTORY_SEPARATOR . '_core' . DIRECTORY_SEPARATOR . 'core.md';
+
+        if (is_file($coreSrc)) {
+            $coreDst = $config->isFlat()
+                ? $targetBase . DIRECTORY_SEPARATOR . '00-core.md'
+                : $targetBase . DIRECTORY_SEPARATOR . '_core' . DIRECTORY_SEPARATOR . 'core.md';
+
+            $this->ensureDir(dirname($coreDst), $result);
+            $this->linkOrCopy($config, $coreSrc, $coreDst, $result);
+        }
+
         foreach ($config->presets as $presetId) {
             $src = $resourceBase . DIRECTORY_SEPARATOR . $presetId . DIRECTORY_SEPARATOR . 'core.md';
 
