@@ -1,19 +1,10 @@
 # Nuxt UI — Project Guidelines (Laravel 12 + Vite + Inertia + Tailwind v4)
 
-**Версия:** 2025‑11‑13
+**Версия:** 2026‑01‑23
 
 Этот документ описывает, как мы используем **Nuxt UI (Vue/Vite‑режим)** в стеке *Laravel 12 + Inertia + Tailwind v4* — чтобы Codex/разработчики писали совместимый, консистентный код‑стайл и предсказуемую интеграцию с бэкендом.
 
-> ## Precedence & Language (MUST)
->
-> - **MUST > SHOULD.** Это руководство перекрывает дефолтные доки/примерки Nuxt UI, если есть конфликт.
-> - **Русский — язык общения по умолчанию.** Пояснения/инструкции пишем по‑русски, названия компонентов/опций/props остаются на английском **без перевода**, но с кратким русским резюме при необходимости.
-> - При загрузке нескольких гайдлайнов Codex учитывает каскад; ближайший к рабочей директории имеет приоритет.
-
-> ## Контейнерные границы / MCP (MUST)
->
-> - Никаких `docker compose exec ...`, доступа к `docker.sock` и т.п. Если нужно запустить что‑то в контейнере — используем **официальные MCP‑инструменты** проекта, исполняющиеся **внутри контейнера**.
-> - Если конкретный MCP‑инструмент недоступен → агент **честно сообщает**, что не может выполнить операцию, и предлагает альтернативу, не нарушающую песочницу (например, сгенерировать shell‑скрипт вместо выполнения команд).
+> Общие правила (приоритеты, язык, песочница/MCP, лимиты логов) см. `.ai/guidelines/01-core.md`.
 
 ---
 
@@ -27,11 +18,16 @@
     - `get_component`, `get_component_metadata` — чтобы получить актуальные пропсы/слоты/ивенты;
     - `list_examples`, `get_example` — чтобы взять эталонный пример из доки;
     - `list_templates`, `get_template`, `get_migration_guide` — для темплейтов и миграций.
+- Для экономии контекста **всегда** старайся запрашивать только нужное:
+  - `get_component_metadata` — сначала, если нужны только props/slots/events;
+  - `get_component` / `get_documentation_page` — с параметром `sections`, чтобы получить только `usage`/`api`/`examples`.
 - Только после ответа от MCP дополнять его:
   - локальным контекстом проекта (наш стек Laravel + Inertia),
   - правилами из этого файла (`nuxt-ui.md`) — о темизации, паттернах модалок/слайдоверов, toasts и т.д.
 
-## 0.1) Nuxt UI docs mirror (MUST)
+- Допускается обращение к любым ресурсам домена `ui.nuxt.com` по запросу пользователя или при недоступности MCP.
+
+## Nuxt UI docs mirror (MUST)
 
 - Основной источник правды: MCP сервер `nuxt-ui`.
 - Если MCP недоступен или возвращает 500, то при наличии в проекте папки `.ai/nuxtui/`:
@@ -46,11 +42,9 @@
 - Пакет ставим в `package.json`:
 
 ```bash
-bun add @nuxt/ui
+bun add @nuxt/ui tailwindcss
 # или npm/pnpm/yarn — по проектным договорённостям; здесь подразумеваем bun
 ```
-
-> Важно: при использовании `pnpm` в классическом режиме либо включаем `shamefully-hoist=true`, либо ставим `tailwindcss`, `vue-router` и `@unhead/vue` в корень проекта, как рекомендуют доки Nuxt UI.
 
 ### 1.2 Vite config (Laravel + Inertia)
 
@@ -77,14 +71,16 @@ export default defineConfig({
       },
     }),
     ui({
-      inertia: true,
+      router: 'inertia',
       // Здесь же можно задать prefix/ui/theme — см. раздел 3
     }),
   ],
 })
 ```
 
-> - Опция **`inertia: true`** говорит Nuxt UI, что роутинг обеспечивает Inertia, и `RouterLink` заменяется на адаптер для Inertia.
+> - Опция **`router: 'inertia'`** говорит Nuxt UI, что роутинг обеспечивает Inertia, и `RouterLink` заменяется на адаптер для Inertia.
+> - Начиная с Nuxt UI `v4.3+` используем именно `router` (старое `inertia: true` встречается в устаревших примерах).
+> - При `router: 'inertia'` (или `router: false`) зависимость `vue-router` **не требуется**.
 > - Nuxt UI сам подключает `unplugin-auto-import` и `unplugin-vue-components`. Глобальные хуки (`useToast`, `useOverlay`, и т.д.) и компоненты (`UButton`, `UCard` и др.) импортируются автоматически.
 
 ### 1.3 Подключение Vue‑плагина Nuxt UI
@@ -104,21 +100,23 @@ const appName = import.meta.env.VITE_APP_NAME || 'Laravel x Nuxt UI'
 createInertiaApp({
   title: (title) => (title ? `${title} - ${appName}` : appName),
   resolve: (name) =>
-          resolvePageComponent(
-                  `./pages/${name}.vue`,
-                  import.meta.glob<DefineComponent>('./pages/**/*.vue'),
-          ),
+    resolvePageComponent(
+      `./pages/${name}.vue`,
+      import.meta.glob<DefineComponent>('./pages/**/*.vue'),
+    ),
   setup({ el, App, props, plugin }) {
     createApp({ render: () => h(App, props) })
-            .use(plugin)
-            .use(ui)
-            .mount(el)
+      .use(plugin)
+      .use(ui)
+      .mount(el)
   },
 })
 ```
 
 > - `ui` — Vue‑плагин Nuxt UI, который регистрирует компоненты, темы и composables.
 > - `import '../css/app.css'` — единая точка входа для Tailwind + Nuxt UI (см. 1.4).
+
+> - Nuxt UI генерирует `auto-imports.d.ts` и `components.d.ts` (auto‑imports / auto‑components). Их стоит добавить в `tsconfig` (`include`) и `.gitignore`.
 
 ### 1.4 Tailwind v4 + Nuxt UI CSS
 
@@ -167,9 +165,7 @@ createInertiaApp({
     @vite('resources/js/app.ts')
   </head>
   <body>
-    <div class="isolate">
-      @inertia
-    </div>
+    @inertia({ class: 'isolate' })
   </body>
 </html>
 ```
@@ -206,16 +202,16 @@ createInertiaApp({
 
 ```vue
 <script setup lang="ts">
-  import ContactModal from '@/components/modals/ContactModal.vue'
+import ContactModal from '@/components/modals/ContactModal.vue'
 
-  const overlay = useOverlay()
-  const contactModal = overlay.create(ContactModal)
+const overlay = useOverlay()
+const contactModal = overlay.create(ContactModal)
 
-  function openModal() {
-    contactModal.open({
-      title: 'Contact us',
-    })
-  }
+function openModal() {
+  contactModal.open({
+    title: 'Contact us',
+  })
+}
 </script>
 
 <template>
@@ -229,17 +225,17 @@ createInertiaApp({
 
 ```vue
 <script setup lang="ts">
-  const props = defineProps<{
-    title?: string
-  }>()
+const props = defineProps<{
+  title?: string
+}>()
 
-  const emit = defineEmits<{
-    (e: 'close'): void
-  }>()
+const emit = defineEmits<{
+  (e: 'close'): void
+}>()
 
-  function close() {
-    emit('close')
-  }
+function close() {
+  emit('close')
+}
 </script>
 
 <template>
@@ -280,7 +276,6 @@ createInertiaApp({
 
 ### 2.4 Формы и валидация
 
-- Схемы — на **Valibot** (или другой выбранный валидатор).
 - Сабмит через `@inertiajs/vue3` (`router.post/put/delete` или `useForm`), ошибки сервера маппим в поля.
 - Кнопки сабмита — с `:loading`/`disabled` на pending.
 
@@ -332,7 +327,7 @@ root.classList.add('site-scroll')
 
 ## 4) Конвенции кода (Vue)
 
-- Только **`<script setup>`** в компонентах.
+- Только **`<script setup lang="ts">`** в компонентах.
 - Имена: `AppXxx`, `FeatureXxx`, секции — `SectionXxx`.
 - **Props/Emits** типизируем через `defineProps/defineEmits` с TS‑интерфейсами.
 
@@ -406,19 +401,19 @@ export default antfu({
 ## 7) MUST / MUST NOT
 
 **MUST**
-- `ui({ inertia: true })` в Vite и подключённый `@nuxt/ui/vue-plugin` в Inertia‑энтрипойнте.
+- `ui({ router: 'inertia' })` в Vite и подключённый `@nuxt/ui/vue-plugin` в Inertia‑энтрипойнте.
 - `<UApp>` на корне дерева компонентов; `class="isolate"` на корневом контейнере Blade.
 - Компоненты библиотеки вместо «ручной» разметки (`UCard`, `UButton`, `UForm` и т.д.).
 - Programmatic overlays **через проектные composables** (например, `useContact()`), а не прямые вызовы `useOverlay()` в страницах.
 - Везде использовать **bun** (install/dev/build).
 - ESLint‑конфиг как выше; порядок импортов — через `lint:fix`.
-- MCP‑границы: любые команды выполняются внутри контейнера через MCP; длинные логи — резюмировать.
+- Песочница/контейнер/логи: см. `.ai/guidelines/01-core.md`.
 
 **MUST NOT**
 - Не предлагать Nuxt‑модули/`nuxt.config.ts` — у нас Vue/Vite‑режим (без Nuxt).
 - Не писать «карточки/модалки/кнопки» руками из `div` + классы; использовать компоненты Nuxt UI.
 - Не импортировать `useToast`/`useOverlay` прямо в страницах — только через проектные composables.
-- Не дергать `docker compose exec ...`, `docker.sock`, не просить отключать песочницу.
+- Песочница/контейнер: см. `.ai/guidelines/01-core.md`.
 
 ---
 
@@ -427,14 +422,14 @@ export default antfu({
 ### 8.1 Страница
 ```vue
 <script setup lang="ts">
-  function createPlan() { /* ... */ }
+function createPlan() { /* ... */ }
 </script>
 
 <template>
   <UPage>
     <UPageHeader
-            :title="$t('billing.title')"
-            :description="$t('billing.subtitle')"
+      :title="$t('billing.title')"
+      :description="$t('billing.subtitle')"
     >
       <template #actions>
         <UButton icon="i-lucide-plus" @click="createPlan">
@@ -456,10 +451,10 @@ export default antfu({
 `resources/js/components/modals/ContactModal.vue`:
 ```vue
 <script setup lang="ts">
-  const props = defineProps<{ title?: string }>()
+const props = defineProps<{ title?: string }>()
 
-  const emit = defineEmits<{ (e: 'close'): void }>()
-  function close() { emit('close') }
+const emit = defineEmits<{ (e: 'close'): void }>()
+function close() { emit('close') }
 </script>
 
 <template>
@@ -487,9 +482,9 @@ export default antfu({
   </UCard>
 
   <UEmpty
-          v-else-if="!items.length"
-          icon="i-lucide-package-open"
-          :description="$t('common.empty')" />
+    v-else-if="!items.length"
+    icon="i-lucide-package-open"
+    :description="$t('common.empty')" />
 
   <UCard v-else>
     <!-- content -->
@@ -501,10 +496,10 @@ export default antfu({
 
 ## 9) Быстрый старт (TL;DR)
 
-- Vite: `ui({ inertia: true })` + `@nuxt/ui/vue-plugin`.
+- Vite: `ui({ router: 'inertia' })` + `@nuxt/ui/vue-plugin`.
 - CSS: `@import "tailwindcss"; @import "@nuxt/ui";` и импорт в `app.ts`.
 - Корень: `<UApp>` и `class="isolate"` на контейнере.
 - Programmatic overlays: через composables (`useContact()` и др.).
 - Компоненты библиотеки вместо «самописных» блоков.
 - bun: `bun add`, `bun run dev`, `bun run build`.
-- Линт: проектный ESLint из раздела 4.1, `lint:fix` правит импорты.
+- Линт: проектный ESLint из раздела 4.1, `lint:fix` правит импорты. `typecheck` для проверки типов.

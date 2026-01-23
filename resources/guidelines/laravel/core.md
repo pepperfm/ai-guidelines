@@ -1,6 +1,6 @@
 # Codex — Laravel/Sail/MCP Guidelines (Personal Overrides)
 
-**Version:** 2025‑11‑13
+**Версия:** 2026‑01‑23
 
 This document defines how Codex must behave in our Laravel/Sail projects.
 
@@ -11,19 +11,8 @@ You are expected to:
 - respect project constraints like PHP version (8.3 vs 8.4) and DB permissions,
 - avoid suggesting steps that break sandbox or require Docker socket access.
 
-> **Precedence**
-> - **MUST** > SHOULD. In conflicts, rules with MUST win.
-> - This document **overrides** generic Laravel docs, tutorials and defaults.
-> - If Codex loads multiple instruction files, the one **ближе к рабочей директории** имеет больший приоритет; при прямом конфликте следуй этому документу.
 
-## Language & Tone (MUST)
-
-- Основной язык общения: **Русский**.
-- Все пояснения на естественном языке (ответы, пошаговые инструкции, статусы задач, резюме ошибок и тестов) агент **MUST** давать **на русском**.
-- Код, имена классов/переменных/файлов, ключи `.env`, текст CLI/исключений — **не переводить**; приводить как есть. Сначала краткое русское резюме, затем цитата оригинала.
-- Если пользователь **явно** попросил другой язык — переключиться на него **только для этого ответа**; по умолчанию — русский.
-- Длинные логи/трейсы на английском: сначала краткое русское резюме, затем “хвост” лога (см. лимиты вывода в этом документе).
-- Это правило **перекрывает** общие настройки/дефолты и руководства, если есть противоречие.
+> Общие правила (приоритеты, язык, песочница/MCP, лимиты логов) см. `.ai/guidelines/*core.md`.
 
 **Assumptions:**
 - Laravel 12+ style,
@@ -39,18 +28,7 @@ You are expected to:
 ## 1) Agent Behavior / Boundaries
 
 ### 1.1 Never assume direct Docker access
-Codex работает в песочнице и **не может** надёжно:
-- вызывать `docker compose exec ...`,
-- читать/маунтить `/var/run/docker.sock`,
-- запускать Sail непосредственно с хоста (см. исключение для `bun` ниже),
-- полагаться на версию PHP на хосте.
-
-Значит:
-- **НЕ пиши** “I'll run `docker compose exec app php artisan ...`”,
-- **НЕ проси** доступ к docker.sock или “выключить песочницу”,
-- **НЕ утверждай**, что запускал `php artisan` локально вне контейнера.
-
-Вместо этого **всё выполнение** — только через MCP‑инструменты проекта.
+См. `.ai/guidelines/*core.md` (песочница/контейнер): **не** предполагаем доступ к `docker compose exec`, `docker.sock` и запуску Sail с хоста для PHP-команд.
 
 ### 1.1.1 Исключение для фронтенд‑инструментов (`bun`) (MUST)
 - **Разрешено** запускать `bun`‑команды через Sail с хоста, **только** для фронтенд‑инструментов
@@ -187,51 +165,13 @@ declare(strict_types=1);
 В проекте доступны хелперы:
 
 ```php
-<?php
-
-if (!function_exists('user')) {
-    /**
-     * @param ?string $guard
-     * @return \Illuminate\Contracts\Auth\Authenticatable|null
-     */
-    function user(?string $guard = null): ?\Illuminate\Contracts\Auth\Authenticatable
-    {
-        return auth($guard)->user();
-    }
-}
-
-if (!function_exists('when')) {
-    function when(bool $condition, callable $true, ?callable $false = null)
-    {
-        if ($condition) {
-            return $true();
-        }
-        if ($false) {
-            return $false();
-        }
-
-        return null;
-    }
-}
-
-if (!function_exists('valueOrDefault')) {
-    function valueOrDefault(mixed $value = null, mixed $default = null, ...$args)
-    {
-        if (blank($args) && blank($value)) {
-            return $default;
-        }
-
-        return $value instanceof \Closure ? $value(...$args) : $value;
-    }
-}
-
-if (!function_exists('db')) {
-    function db(?string $connection = null): \Illuminate\Database\ConnectionInterface
-    {
-        return app('db')->connection($connection);
-    }
-}
+user(?string $guard = null): ?\Illuminate\Contracts\Auth\Authenticatable
+when(bool $condition, callable $true, ?callable $false = null): mixed
+valueOrDefault(mixed $value = null, mixed $default = null, ...$args): mixed
+db(?string $connection = null): \Illuminate\Database\ConnectionInterface
 ```
+
+_Реализацию см. в коде проекта (поиск по `function user(` / `function when(`)._
 
 **Правила использования:**
 - Вместо `auth($guard)->user()` **предпочитай** `user($guard)`.
@@ -287,7 +227,8 @@ public function show(string $slug): Responsable
 }
 ```
 
-**Исключение:** наши собственные классы (`App\...`) можно импортировать и использовать короткие имена в сигнатурах.
+**Исключение:** наши собственные классы (`App\...`) можно импортировать и использовать короткие имена в сигнатурах. А так же уже написанный код.
+Его сигнатуры можно менять разрешено по прямому запросу пользователя.
 
 ### 4.6 Исключения
 Не импортировать глобальные исключения ради сокращения. Бросать/ловить через inline FQCN:
@@ -351,11 +292,11 @@ try {
 ### 4.11 Доступ к БД
 - По умолчанию — **Eloquent**.
 - Если нужны ручные запросы/транзакции — `db()` helper, не `DB::` фасад.
-- Транзакции — только `db()->transaction(fn () => ...)`, не ручные `begin/commit/rollBack`.
+- Транзакции — выгодные для краткости кода: `db()->transaction(fn () => ...)` или `begin/commit/rollBack`.
 - Сложные запросы — вне контроллеров (сервисы/репозитории) → тестируемость.
 
 ### 4.12 Ошибки и логирование
-- Предпочитай фреймворковые механизмы: `abort(404)` или, при необходимости, фреймворковые исключения (например, `\Illuminate\Auth\Access\AuthorizationException`).
+- Предпочитай фреймворковые механизмы: `abort(404)/abort_if($condition, 404)` или, при необходимости, фреймворковые исключения (например, `\Illuminate\Auth\Access\AuthorizationException`).
 - Логируй через `logger()` **с контекстом**: `logger()->warning('Unexpected', ['id' => $id])`.
 
 ---
@@ -366,12 +307,11 @@ try {
 1. **Laravel**: `Illuminate\*`, `Laravel\*` (и при необходимости `Symfony\*`, относимый к экосистеме фреймворка).
 2. **Сторонние библиотеки**: любой вендор, не входящий в Laravel (`Spatie\*`, `GuzzleHttp\*`, `Carbon\*`, и т.п.).
 3. **Наши пространства имён `App\*`** — в таком под‑порядке:
-  1. **Enums и сервисные классы/инфраструктура**: `App\Enums\*`, `App\Services\*`, `App\Support\*`, `App\Actions\*`, `App\DTOs\*`.
-  2. **Абстракции/контракты и “слои” приложения**: `App\Contracts|Interfaces|Abstracts\*`, `App\Http\Requests\*`, `App\Http\Resources\*`, и т.п.
-  3. **Модели**: `App\Models\*`.
+1. **Enums и сервисные классы/инфраструктура**: `App\Enums\*`, `App\Services\*`, `App\Support\*`, `App\Actions\*`, `App\DTOs\*`.
+2. **Абстракции/контракты и “слои” приложения**: `App\Http\Requests\*`, `App\Http\Resources\*`, `App\Contracts|Interfaces|Abstracts\*`, и т.п.
+3. **Модели**: `App\Models\*`.
 
 **Внутри каждой группы** — лексикографическая сортировка по FQCN.  
-**Ровно одна пустая строка** между группами, **без** пустых строк внутри группы.  
 Запрещены дубликаты и “двойные” `;;`.
 
 **Пример (исходный список → отсортированный):**
@@ -379,13 +319,12 @@ try {
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
-
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
-
 use App\Enums\PageSliderFileType;
 use App\Http\Requests\Dashboard\Page\PageRequest;
 use App\Http\Requests\Dashboard\Page\PageStoreRequest;
 use App\Http\Requests\Dashboard\Page\PageUpdateRequest;
+use App\Contracts\PaymentServiceContract;
 use App\Models\Dance;
 use App\Models\Page;
 use App\Models\PageSliderFile;
@@ -405,18 +344,16 @@ use App\Models\PageSliderFile;
 - Пользовательские хелперы проекта: `user()` вместо `auth()->user()`, `when()`, `valueOrDefault()`, `db()` (§4.3).
 - Контроллеры — тонкие; бизнес‑логика в сервисах; валидация — `FormRequest`.
 - Конфигурация через `config()`, не `env()` в рантайме.
-- Доступ к БД — Eloquent; при необходимости Query Builder — через `db()`. Транзакции — только `db()->transaction()`.
-- Взаимодействие с приложением — **только** через MCP‑инструменты внутри контейнера.
+- Доступ к БД — Eloquent; при необходимости Query Builder — через `db()`. Транзакции — используем вариант для большей краткости.
+- Песочница/контейнер/запуск команд: см. `.ai/guidelines/*core.md`.
 - Тесты — **только** `boost:run-tests` через MCP:`tinker`, сериално по умолчанию. Агент парсит JSON‑схему и кратко резюмирует результат.
-- Порядок импортов — согласно §5 (Laravel → сторонние → `App\*`: Enums/Services → Абстракции/Requests → Модели).
+- Порядок импортов — согласно §5 (Laravel → сторонние → `App\*`: Enums/Services → Requests/Data → Абстракции/Модели).
 
 ### 6.2 MUST NOT
-- Никаких просьб о docker.sock/привилегиях/отключении песочницы.
-- Не запускать `docker compose exec ...` и не просить пользователя сделать это “за агента”.
-- Не утверждать, что агент запускал `php artisan test` локально вне контейнера.
+- Песочница/контейнер: см. `.ai/guidelines/*core.md`.
 - Не импортировать глобальные исключения ради сокращения имён.
 - Не предлагать Pest `--parallel` без явного сигнала от пользователя.
-- Не засорять ответы длинными логами — резюмировать и прикладывать хвост.
+- Логи/вывод: см. `.ai/guidelines/*core.md`.
 
 ---
 
