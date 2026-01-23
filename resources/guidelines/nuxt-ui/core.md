@@ -97,15 +97,15 @@ const appName = import.meta.env.VITE_APP_NAME || 'Laravel x Nuxt UI'
 createInertiaApp({
   title: (title) => (title ? `${title} - ${appName}` : appName),
   resolve: (name) =>
-    resolvePageComponent(
-      `./pages/${name}.vue`,
-      import.meta.glob<DefineComponent>('./pages/**/*.vue'),
-    ),
+          resolvePageComponent(
+                  `./pages/${name}.vue`,
+                  import.meta.glob<DefineComponent>('./pages/**/*.vue'),
+          ),
   setup({ el, App, props, plugin }) {
     createApp({ render: () => h(App, props) })
-      .use(plugin)
-      .use(ui)
-      .mount(el)
+            .use(plugin)
+            .use(ui)
+            .mount(el)
   },
 })
 ```
@@ -199,16 +199,16 @@ createInertiaApp({
 
 ```vue
 <script setup lang="ts">
-import ContactModal from '@/components/modals/ContactModal.vue'
+  import ContactModal from '@/components/modals/ContactModal.vue'
 
-const overlay = useOverlay()
-const contactModal = overlay.create(ContactModal)
+  const overlay = useOverlay()
+  const contactModal = overlay.create(ContactModal)
 
-function openModal() {
-  contactModal.open({
-    title: 'Contact us',
-  })
-}
+  function openModal() {
+    contactModal.open({
+      title: 'Contact us',
+    })
+  }
 </script>
 
 <template>
@@ -222,17 +222,17 @@ function openModal() {
 
 ```vue
 <script setup lang="ts">
-const props = defineProps<{
-  title?: string
-}>()
+  const props = defineProps<{
+    title?: string
+  }>()
 
-const emit = defineEmits<{
-  (e: 'close'): void
-}>()
+  const emit = defineEmits<{
+    (e: 'close'): void
+  }>()
 
-function close() {
-  emit('close')
-}
+  function close() {
+    emit('close')
+  }
 </script>
 
 <template>
@@ -420,14 +420,14 @@ export default antfu({
 ### 8.1 Страница
 ```vue
 <script setup lang="ts">
-function createPlan() { /* ... */ }
+  function createPlan() { /* ... */ }
 </script>
 
 <template>
   <UPage>
     <UPageHeader
-      :title="$t('billing.title')"
-      :description="$t('billing.subtitle')"
+            :title="$t('billing.title')"
+            :description="$t('billing.subtitle')"
     >
       <template #actions>
         <UButton icon="i-lucide-plus" @click="createPlan">
@@ -449,10 +449,10 @@ function createPlan() { /* ... */ }
 `resources/js/components/modals/ContactModal.vue`:
 ```vue
 <script setup lang="ts">
-const props = defineProps<{ title?: string }>()
+  const props = defineProps<{ title?: string }>()
 
-const emit = defineEmits<{ (e: 'close'): void }>()
-function close() { emit('close') }
+  const emit = defineEmits<{ (e: 'close'): void }>()
+  function close() { emit('close') }
 </script>
 
 <template>
@@ -480,9 +480,9 @@ function close() { emit('close') }
   </UCard>
 
   <UEmpty
-    v-else-if="!items.length"
-    icon="i-lucide-package-open"
-    :description="$t('common.empty')" />
+          v-else-if="!items.length"
+          icon="i-lucide-package-open"
+          :description="$t('common.empty')" />
 
   <UCard v-else>
     <!-- content -->
