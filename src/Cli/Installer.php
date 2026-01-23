@@ -27,7 +27,7 @@ final readonly class Installer
 
         if (is_file($coreSrc)) {
             $coreDst = $config->isFlat()
-                ? $targetBase . DIRECTORY_SEPARATOR . '00-core.md'
+                ? $targetBase . DIRECTORY_SEPARATOR . '01-core.md'
                 : $targetBase . DIRECTORY_SEPARATOR . '_core' . DIRECTORY_SEPARATOR . 'core.md';
 
             $this->ensureDir(dirname($coreDst), $result);
