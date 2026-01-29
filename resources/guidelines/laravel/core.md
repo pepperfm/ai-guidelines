@@ -1,147 +1,119 @@
-# Codex — Laravel/Sail/MCP Guidelines (Personal Overrides)
+# Codex — Laravel/Sail Guidelines (Personal Overrides)
 
-**Версия:** 2026‑01‑23
+**Версия:** 2026‑01‑29
 
 This document defines how Codex must behave in our Laravel/Sail projects.
 
 You are expected to:
 - generate production‑quality Laravel/PHP code that matches this style guide,
-- interact with the running Sail container **only** through MCP tools,
-- run tests through MCP, not through host Docker or direct `phpunit`,
-- respect project constraints like PHP version (8.3 vs 8.4) and DB permissions,
-- avoid suggesting steps that break sandbox or require Docker socket access.
+- run Artisan commands and tests through `./vendor/bin/sail artisan`,
+- respect project constraints like PHP version (8.3 vs 8.4) and DB permissions.
 
-
-> Общие правила (приоритеты, язык, песочница/MCP, лимиты логов) см. `.ai/guidelines/*core.md`.
+> Общие правила (приоритеты, язык, контейнер, лимиты логов) см. `.ai/guidelines/*core.md`.
 
 **Assumptions:**
 - Laravel 12+ style,
 - strict types,
 - Pest tests,
 - Sail for local dev,
-- MCP server exposed via `boost:mcp`,
-- per‑project Artisan command `boost:run-tests`,
 - project helpers available: `user()`, `when()`, `valueOrDefault()`, `db()` (см. §4.3).
 
 ---
 
 ## 1) Agent Behavior / Boundaries
 
-### 1.1 Never assume direct Docker access
-См. `.ai/guidelines/*core.md` (песочница/контейнер): **не** предполагаем доступ к `docker compose exec`, `docker.sock` и запуску Sail с хоста для PHP-команд.
+### 1.1 Все команды — через Sail
 
-### 1.1.1 Исключение для фронтенд‑инструментов (`bun`) (MUST)
-- **Разрешено** запускать `bun`‑команды через Sail с хоста, **только** для фронтенд‑инструментов
-  и **только по явному запросу пользователя**.
-- Разрешённые команды:
-  - `./vendor/bin/sail bun install`
-  - `./vendor/bin/sail bun run <script>` (lint/typecheck/build)
-- Это исключение **не распространяется** на `php artisan`, миграции и тесты — их по‑прежнему
-  исполняем через MCP (`tinker`/`boost:run-tests`).
+Проект работает в Docker‑контейнере через **Laravel Sail**. Все PHP/Artisan‑команды выполняются через `./vendor/bin/sail`:
 
-### 1.2 Use MCP tools to act inside the app (tools contract)
-**Минимально ожидаемые инструменты:**
+```bash
+# Artisan‑команды
+./vendor/bin/sail artisan migrate
+./vendor/bin/sail artisan make:model User
+./vendor/bin/sail artisan queue:work
 
-- **`tinker`**  
-  _Input:_ строка PHP‑кода (UTF‑8).  
-  _Exec env:_ внутри Sail‑контейнера проекта.  
-  _Output:_ строка (`return` последнего выражения или собранный вывод — см. примеры).  
-  _Purpose:_ любые инлайн‑вызовы `Artisan::call(...)`, отладка, чтение состояния приложения.
+# Composer
+./vendor/bin/sail composer i
+./vendor/bin/sail composer r package/name
 
-- **`boost:run-tests` (через Artisan)**  
-  Запускается **через `tinker`**, см. §2.2 и §3.2. Возвращает **строго** JSON (см. схему ниже).
+# Фронтенд (bun)
+./vendor/bin/sail bun i
+./vendor/bin/sail bun run dev
+./vendor/bin/sail bun run build
+```
 
-**Таймауты/вывод:**
-- Стандартный запуск одной команды: **до 60 с**; для тестов/миграций допускается до **180 с**.
-- Если stdout > **64 KiB** или > **200 строк**, агент **MUST**:
-  1) дать краткое резюме,
-  2) приложить “хвост” (последние ~100 строк) в свернутом блоке,
-  3) предложить полный лог по запросу.  
-     Агент **не должен** заливать в ответ много сотен строк лога.
+**Не использовать:**
+- `docker compose exec ...` напрямую
+- хостовый `php artisan ...` (вне контейнера)
+- хостовый `composer ...` (вне контейнера)
 
-**Фоллбек:** если конкретный MCP‑инструмент **недоступен/падает**, агент говорит:
-> “I can’t execute this inside the container via MCP in this project. Please run `php artisan <command>` manually inside Sail.”  
-и **не** просит никаких привилегий Docker.
+### 1.2 Таймауты и вывод
+
+- Стандартный запуск команды: **до 60 с**; для тестов/миграций допускается до **180 с**.
+- Если stdout > **64 KiB** или > **200 строк**, агент **MUST**:
+    1) дать краткое резюме,
+    2) приложить "хвост" (последние ~100 строк),
+    3) предложить полный лог по запросу.
 
 ---
 
-## 2) Running Artisan via MCP
+## 2) Running Artisan Commands
 
 ### 2.1 Базовый шаблон
-Никогда не проси пользователя запускать `docker compose exec …` от имени агента. Любая Artisan‑команда исполняется через `tinker` так:
 
-```php
-<?php
+Любая Artisan‑команда выполняется через Sail:
 
-use Illuminate\Support\Facades\Artisan;
-
-Artisan::call('some:command', [
-    // 'option' => 'value',
-]);
-
-return Artisan::output();
+```bash
+./vendor/bin/sail artisan <command> [options]
 ```
 
-Агент отправляет этот сниппет в MCP:`tinker` и получает строковый результат.
+**Примеры:**
+```bash
+# Миграции
+./vendor/bin/sail artisan migrate
+./vendor/bin/sail artisan migrate:fresh --seed
 
-### 2.2 Алгоритм действий (минимальное дерево решений)
-1. Нужна команда Artisan → **попробуй MCP:`tinker`**.
-2. Если MCP отсутствует/падает → выдай фразу‑фоллбек (см. выше).
-3. Никогда не проси docker.sock/привилегии/выход из песочницы.
+# Генерация
+./vendor/bin/sail artisan make:controller UserController
+./vendor/bin/sail artisan make:model Order -mfc
+
+# Очереди
+./vendor/bin/sail artisan queue:work --once
+
+# Кэш
+./vendor/bin/sail artisan config:cache
+./vendor/bin/sail artisan route:cache
+```
 
 ---
 
 ## 3) Testing
 
-### 3.1 Реальность окружений
-Проекты различаются: версия PHP (8.3/8.4), настройки БД/права, имена сервисов.  
-Codex **не полагается** на хостовый PHP, **не** исполняет Sail напрямую и **не** просит docker.sock.
+### 3.1 Как запускать тесты
 
-### 3.2 Как тесты ДОЛЖНЫ запускаться
-Каждый проект предоставляет Artisan‑команду `boost:run-tests`, которая:
-- принудительно устанавливает `APP_ENV=testing`,
-- запускает Pest/`php artisan test` **внутри контейнера**,
-- выполняет **сериално** (по умолчанию **без** `--parallel`),
-- возвращает **одну JSON‑строку** со строгой схемой:
+Тесты запускаются через Sail:
 
-```json
-{
-  "ok": true,
-  "exitCode": 0,
-  "summary": {
-    "tests": 123,
-    "assertions": 456,
-    "failures": 0,
-    "errors": 0,
-    "skipped": 0,
-    "timeSec": 12.34
-  },
-  "stdout": "...",
-  "stderr": ""
-}
+```bash
+# Все тесты
+./vendor/bin/sail artisan test
+
+# Конкретный файл
+./vendor/bin/sail artisan test tests/Feature/UserTest.php
+
+# Фильтр по имени теста
+./vendor/bin/sail artisan test --filter=test_user_can_login
+
+# Компактный вывод
+./vendor/bin/sail artisan test --compact
 ```
 
-**Семантика:**
-- `ok = true` ⇔ `exitCode === 0` и `summary.failures === 0` и `summary.errors === 0`.
-- Если вывод **невалидный JSON** → считать прогон **неуспешным**, показать сырой вывод и предложить повтор.
-- Агент **MUST** парсить JSON и кратко резюмировать результаты/пайплайны провалов.
+### 3.2 Параллельные тесты
 
-**Стандартный вызов через MCP:**
-```php
-<?php
-
-use Illuminate\Support\Facades\Artisan;
-
-Artisan::call('boost:run-tests');
-
-return Artisan::output(); // JSON-строка по схеме выше
-```
-
-### 3.3 Параллельные тесты
 По умолчанию **запрещено** предлагать `--parallel`. Разрешено **только** если пользователь **явно** сообщил, что настроены права БД для воркеров (иначе вероятна `SQLSTATE[HY000] [1044] Access denied`).
 
-### 3.4 После изменений кода
-После генерации/рефакторинга агент **SHOULD** предложить прогнать `boost:run-tests` через MCP и выдать краткое резюме/хвост логов.
+### 3.3 После изменений кода
+
+После генерации/рефакторинга агент **SHOULD** предложить прогнать тесты и выдать краткое резюме результатов.
 
 ---
 
@@ -176,7 +148,7 @@ _Реализацию см. в коде проекта (поиск по `functio
 **Правила использования:**
 - Вместо `auth($guard)->user()` **предпочитай** `user($guard)`.
 - Для ветвлений на уровне вызова используй `when(...)` (повышает читаемость компактных веток).
-- Для “значение или дефолт (или коллбэк)” — `valueOrDefault(...)`.
+- Для "значение или дефолт (или коллбэк)" — `valueOrDefault(...)`.
 - Для работы с БД за пределами Eloquent — `db()` (см. §4.11), **не** `DB::` фасад.
 
 ### 4.4 Доступ к элементам массивов (Arr::get по умолчанию)
@@ -199,10 +171,10 @@ $limit = (int) ($payload['limit'] ?? 10);
 
 **Исключения (прямой доступ допустим):**
 - массивы, которые **гарантированно** имеют ключи по контракту:
-  - `$request->validated()` с `required` / `present` правилами;
-  - локально сформированные массивы в **этом же** скоупе;
-  - результат `array_merge`/`array_replace` с обязательными ключами;
-  - итерация по списку заранее определённых ключей (константы, enum‑map);
+    - `$request->validated()` с `required` / `present` правилами;
+    - локально сформированные массивы в **этом же** скоупе;
+    - результат `array_merge`/`array_replace` с обязательными ключами;
+    - итерация по списку заранее определённых ключей (константы, enum‑map);
 - когда отсутствие ключа — **логическая ошибка**, и нужен явный `Undefined index` (например, строгие DTO‑shape).
 
 ### 4.5 Типы в сигнатурах: FQCN для вендорных классов
@@ -243,14 +215,14 @@ try {
 }
 ```
 
-### 4.7 Явные return‑type’ы и HTTP‑ответы
+### 4.7 Явные return‑type'ы и HTTP‑ответы
 - **Все** публичные методы имеют явный return type.
 - Экшены контроллеров возвращают один из:
-  - `\Illuminate\Http\JsonResponse`
-  - `\Illuminate\Http\RedirectResponse`
-  - `\Symfony\Component\HttpFoundation\Response`
-  - `\Inertia\Response`
-  - `\Illuminate\Contracts\Support\Responsable`
+    - `\Illuminate\Http\JsonResponse`
+    - `\Illuminate\Http\RedirectResponse`
+    - `\Symfony\Component\HttpFoundation\Response`
+    - `\Inertia\Response`
+    - `\Illuminate\Contracts\Support\Responsable`
 - Если знаешь точный тип — **предпочитай конкретный** (например, `JsonResponse`), `Responsable` — когда действительно универсально.
 
 ### 4.8 Helpers > Facades (важно)
@@ -307,26 +279,21 @@ try {
 1. **Laravel**: `Illuminate\*`, `Laravel\*` (и при необходимости `Symfony\*`, относимый к экосистеме фреймворка).
 2. **Сторонние библиотеки**: любой вендор, не входящий в Laravel (`Spatie\*`, `GuzzleHttp\*`, `Carbon\*`, и т.п.).
 3. **Наши пространства имён `App\*`** — в таком под‑порядке:
-1. **Enums и сервисные классы/инфраструктура**: `App\Enums\*`, `App\Services\*`, `App\Support\*`, `App\Actions\*`, `App\DTOs\*`.
-2. **Абстракции/контракты и “слои” приложения**: `App\Http\Requests\*`, `App\Http\Resources\*`, `App\Contracts|Interfaces|Abstracts\*`, и т.п.
-3. **Модели**: `App\Models\*`.
+4. **Enums и сервисные классы/инфраструктура**: `App\Enums\*`, `App\Services\*`, `App\Support\*`, `App\Actions\*`, `App\DTOs\*`.
+5. **Абстракции/контракты и "слои" приложения**: `App\Http\Requests\*`, `App\Http\Resources\*`, `App\Contracts|Interfaces|Abstracts\*`, и т.п.
+6. **Модели**: `App\Models\*`.
 
-**Внутри каждой группы** — лексикографическая сортировка по FQCN.  
-Запрещены дубликаты и “двойные” `;;`.
+**Внутри каждой группы** — лексикографическая сортировка по FQCN.
+Запрещены дубликаты и "двойные" `;;`.
 
 **Пример (исходный список → отсортированный):**
 ```php
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Storage;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use App\Enums\PageSliderFileType;
 use App\Http\Requests\Dashboard\Page\PageRequest;
-use App\Http\Requests\Dashboard\Page\PageStoreRequest;
-use App\Http\Requests\Dashboard\Page\PageUpdateRequest;
 use App\Contracts\PaymentServiceContract;
-use App\Models\Dance;
-use App\Models\Page;
 use App\Models\PageSliderFile;
 ```
 
@@ -345,12 +312,12 @@ use App\Models\PageSliderFile;
 - Контроллеры — тонкие; бизнес‑логика в сервисах; валидация — `FormRequest`.
 - Конфигурация через `config()`, не `env()` в рантайме.
 - Доступ к БД — Eloquent; при необходимости Query Builder — через `db()`. Транзакции — используем вариант для большей краткости.
-- Песочница/контейнер/запуск команд: см. `.ai/guidelines/*core.md`.
-- Тесты — **только** `boost:run-tests` через MCP:`tinker`, сериално по умолчанию. Агент парсит JSON‑схему и кратко резюмирует результат.
+- Контейнер/запуск команд: см. `.ai/guidelines/*core.md`.
+- Тесты запускаются через `./vendor/bin/sail artisan test`, сериально по умолчанию.
 - Порядок импортов — согласно §5 (Laravel → сторонние → `App\*`: Enums/Services → Requests/Data → Абстракции/Модели).
 
 ### 6.2 MUST NOT
-- Песочница/контейнер: см. `.ai/guidelines/*core.md`.
+- Не использовать `docker compose exec` напрямую — только через Sail.
 - Не импортировать глобальные исключения ради сокращения имён.
 - Не предлагать Pest `--parallel` без явного сигнала от пользователя.
 - Логи/вывод: см. `.ai/guidelines/*core.md`.
@@ -359,24 +326,38 @@ use App\Models\PageSliderFile;
 
 ## 7) Quick snippets
 
-**Artisan через MCP (`tinker`):**
-```php
-<?php
+**Запуск Artisan‑команд:**
+```bash
+# Миграции
+./vendor/bin/sail artisan migrate
+./vendor/bin/sail artisan migrate:fresh --seed
 
-use Illuminate\Support\Facades\Artisan;
-
-Artisan::call('migrate', ['--force' => true]);
-
-return Artisan::output();
+# Генерация
+./vendor/bin/sail artisan make:controller Api/UserController
+./vendor/bin/sail artisan make:model Order -mfc
 ```
 
 **Запуск тестов:**
-```php
-<?php
+```bash
+# Все тесты
+./vendor/bin/sail artisan test
 
-use Illuminate\Support\Facades\Artisan;
+# Конкретный файл
+./vendor/bin/sail artisan test tests/Feature/UserTest.php
 
-Artisan::call('boost:run-tests');
+# По фильтру
+./vendor/bin/sail artisan test --filter=test_user_can_login
+```
 
-return Artisan::output(); // JSON по §3.2
+**Composer:**
+```bash
+./vendor/bin/sail composer i
+./vendor/bin/sail composer r spatie/laravel-data
+```
+
+**Фронтенд:**
+```bash
+./vendor/bin/sail bun i
+./vendor/bin/sail bun run dev
+./vendor/bin/sail bun run build
 ```
