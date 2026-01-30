@@ -5,7 +5,7 @@ namespace PepperFM\AiGuidelines\Cli;
 
 final class Presets
 {
-    private const string LARAVEL_MACROS_FLAT = '011-laravel-macros.md';
+    private const LARAVEL_MACROS_FLAT = '011-laravel-macros.md';
 
     /**
      * Preset definitions.
@@ -15,7 +15,7 @@ final class Presets
      *
      * @var array<string, array{label: string, flat: string}>
      */
-    private const array PRESETS = [
+    private const PRESETS = [
         'laravel' => [
             'label' => 'Laravel/Sail/MCP (Codex overrides)',
             'flat' => '10-laravel.md',

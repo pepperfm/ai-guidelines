@@ -16,7 +16,7 @@ final class Skills
      *
      * @var array<string, array<int, string>>
      */
-    private const array BY_PRESET = [
+    private const BY_PRESET = [
         'laravel' => [
             'laravel-sail-and-tests',
             'laravel-php-style',
