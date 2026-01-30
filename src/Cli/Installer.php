@@ -17,7 +17,7 @@ final readonly class Installer
     {
         $result = new InstallResult();
 
-        $targetBase = Paths::normalize($this->projectRoot . DIRECTORY_SEPARATOR . Config::DEFAULT_GUIDELINES_TARGET);
+        $targetBase = Paths::normalize($this->projectRoot . DIRECTORY_SEPARATOR . $config->target);
         $packageBase = Paths::packageBase();
         $resourceBase = $packageBase . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'guidelines';
 
@@ -26,7 +26,9 @@ final readonly class Installer
         $coreSrc = $resourceBase . DIRECTORY_SEPARATOR . '_core' . DIRECTORY_SEPARATOR . 'core.md';
 
         if (is_file($coreSrc)) {
-            $coreDst = $targetBase . DIRECTORY_SEPARATOR . '01-core.md';
+            $coreDst = $config->isFlat()
+                ? $targetBase . DIRECTORY_SEPARATOR . '01-core.md'
+                : $targetBase . DIRECTORY_SEPARATOR . '_core' . DIRECTORY_SEPARATOR . 'core.md';
 
             $this->ensureDir(dirname($coreDst), $result);
             $this->linkOrCopy($config, $coreSrc, $coreDst, $result);
@@ -40,11 +42,22 @@ final readonly class Installer
                 continue;
             }
 
-            $dst = $targetBase . DIRECTORY_SEPARATOR . Presets::flatFileName($presetId);
-            $this->linkOrCopy($config, $src, $dst, $result);
+            if ($config->isFlat()) {
+                $dst = $targetBase . DIRECTORY_SEPARATOR . Presets::flatFileName($presetId);
+                $this->linkOrCopy($config, $src, $dst, $result);
+                if ($presetId === 'laravel') {
+                    $this->installLaravelMacros($config, $resourceBase, $targetBase, null, $result);
+                }
+                continue;
+            }
 
+            $dstDir = $targetBase . DIRECTORY_SEPARATOR . $presetId;
+            $dst = $dstDir . DIRECTORY_SEPARATOR . 'core.md';
+
+            $this->ensureDir($dstDir, $result);
+            $this->linkOrCopy($config, $src, $dst, $result);
             if ($presetId === 'laravel') {
-                $this->installLaravelMacros($config, $resourceBase, $targetBase, $result);
+                $this->installLaravelMacros($config, $resourceBase, $targetBase, $dstDir, $result);
             }
         }
 
@@ -59,6 +72,7 @@ final readonly class Installer
         Config $config,
         string $resourceBase,
         string $targetBase,
+        ?string $dstDir,
         InstallResult $result
     ): void {
         if (!$config->laravelMacros) {
@@ -71,7 +85,9 @@ final readonly class Installer
             return;
         }
 
-        $macrosDst = $targetBase . DIRECTORY_SEPARATOR . Presets::laravelMacrosFlatFileName();
+        $macrosDst = $config->isFlat()
+            ? $targetBase . DIRECTORY_SEPARATOR . Presets::laravelMacrosFlatFileName()
+            : (($dstDir ?? $targetBase . DIRECTORY_SEPARATOR . 'laravel') . DIRECTORY_SEPARATOR . 'macros.md');
 
         $this->ensureDir(dirname($macrosDst), $result);
         $this->linkOrCopy($config, $macrosSrc, $macrosDst, $result);
@@ -86,7 +102,7 @@ final readonly class Installer
             return;
         }
 
-        $skillsTargetBase = Paths::normalize($this->projectRoot . DIRECTORY_SEPARATOR . Config::DEFAULT_SKILLS_TARGET);
+        $skillsTargetBase = Paths::normalize($this->projectRoot . DIRECTORY_SEPARATOR . $config->skillsTarget);
         $this->ensureDir($skillsTargetBase, $result);
 
         // Optional: index/readme for humans.

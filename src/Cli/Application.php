@@ -100,9 +100,15 @@ final class Application
                 default: $laravelMacrosDefault,
             );
 
-        note('Boost v2.0 подключает custom guidelines только из .ai/guidelines/* (без подпапок), поэтому раскладываем плоско и по номерам.');
-
-        $layout = Config::DEFAULT_LAYOUT;
+        $layout = select(
+            label: 'Как раскладывать файлы в .ai/guidelines?',
+            options: [
+                'flat-numbered' => 'Вариант B: плоско, с номерами (10-laravel.md, 11-nuxt-ui.md...) — проще контролировать порядок',
+                'folders' => 'Папками: <preset>/core.md (чистая структура, но порядок зависит от сборщика)',
+            ],
+            default: (string) ($opts['layout'] ?? 'flat-numbered'),
+            hint: 'Если тебе важен приоритет/порядок при сборке — выбирай flat-numbered.',
+        );
 
         $mode = select(
             label: 'Режим установки',
@@ -113,8 +119,15 @@ final class Application
             default: (string) ($opts['mode'] ?? 'symlink'),
         );
 
-        // Boost contract: фиксированные пути в проекте.
-        $target = Config::DEFAULT_GUIDELINES_TARGET;
+        $defaultTarget = $layout === 'flat-numbered'
+            ? (string) ($opts['target'] ?? '.ai/guidelines')
+            : (string) ($opts['target'] ?? '.ai/guidelines/pepperfm');
+
+        $target = text(
+            label: 'Куда положить гайдлайны внутри проекта?',
+            default: $defaultTarget,
+            required: true,
+        );
 
         $skillsDefault = self::boolOpt($opts, 'skills') ?? true;
         $skills = confirm(
@@ -122,7 +135,14 @@ final class Application
             default: $skillsDefault,
         );
 
-        $skillsTarget = Config::DEFAULT_SKILLS_TARGET;
+        $skillsTargetDefault = (string) ($opts['skills_target'] ?? '.ai/skills');
+        $skillsTarget = $skills
+            ? text(
+                label: 'Куда положить skills внутри проекта?',
+                default: $skillsTargetDefault,
+                required: true,
+            )
+            : $skillsTargetDefault;
 
         $writeConfig = confirm(
             label: "Сохранить конфиг в $configPath?",
@@ -175,15 +195,12 @@ final class Application
         }
 
         $presetsFromFlags = self::parsePresets($opts);
-        // Boost contract: пути и раскладка фиксированы.
-        // Флаги --layout, --target, --skills-target принимаются для совместимости, но игнорируются.
-        $layout = null;
-        $target = null;
-        $skillsTarget = null;
-
         $mode = isset($opts['mode']) ? (string) $opts['mode'] : null;
+        $layout = isset($opts['layout']) ? (string) $opts['layout'] : null;
+        $target = isset($opts['target']) ? (string) $opts['target'] : null;
         $laravelMacros = self::boolOpt($opts, 'laravel_macros');
         $skills = self::boolOpt($opts, 'skills');
+        $skillsTarget = isset($opts['skills_target']) ? (string) $opts['skills_target'] : null;
 
         if ($config === null) {
             if ($presetsFromFlags === [] && !$noInteraction) {
@@ -204,12 +221,12 @@ final class Application
 
             $config = new Config(
                 mode: $mode ?? 'symlink',
-                layout: Config::DEFAULT_LAYOUT,
-                target: Config::DEFAULT_GUIDELINES_TARGET,
+                layout: $layout ?? 'flat-numbered',
+                target: $target ?? '.ai/guidelines',
                 presets: $presetsFromFlags,
                 laravelMacros: $laravelMacros ?? false,
                 skills: $skills ?? true,
-                skillsTarget: Config::DEFAULT_SKILLS_TARGET,
+                skillsTarget: $skillsTarget ?? '.ai/skills',
             );
 
             if ($writeConfig && self::writeConfig($configPath, $config, (bool) ($opts['dry_run'] ?? false))) {
@@ -222,11 +239,20 @@ final class Application
             if ($mode !== null) {
                 $config->mode = $mode;
             }
+            if ($layout !== null) {
+                $config->layout = $layout;
+            }
+            if ($target !== null) {
+                $config->target = $target;
+            }
             if ($laravelMacros !== null) {
                 $config->laravelMacros = $laravelMacros;
             }
             if ($skills !== null) {
                 $config->skills = $skills;
+            }
+            if ($skillsTarget !== null) {
+                $config->skillsTarget = $skillsTarget;
             }
 
             if ($writeConfig && self::writeConfig($configPath, $config, (bool) ($opts['dry_run'] ?? false))) {
@@ -246,7 +272,7 @@ final class Application
         $dryRun = (bool) ($opts['dry_run'] ?? false);
 
         note('Выбранные пресеты: ' . implode(', ', $config->presets));
-        note('Mode: ' . $config->mode . ' | Presets: ' . implode(', ', $config->presets) . ' | Skills: ' . ($config->skills ? 'on' : 'off') . ' | Paths: .ai/guidelines + .ai/skills (Boost v2.0 contract)');
+        note('Layout: ' . $config->layout . ' | Mode: ' . $config->mode . ' | Target: ' . $config->target . ' | Skills: ' . ($config->skills ? 'on' : 'off') . ' | Skills target: ' . $config->skillsTarget);
 
         $installer = new Installer(
             projectRoot: $projectRoot,
@@ -275,40 +301,12 @@ final class Application
         }
 
         $artisan = $projectRoot . DIRECTORY_SEPARATOR . 'artisan';
-        $boostUpdate = (bool) ($opts['boost_update'] ?? false);
-
         if (!$dryRun && is_file($artisan)) {
-            if ($boostUpdate) {
-                info('Запускаю: php artisan boost:update');
-                $exit = self::runArtisanBoostUpdate($projectRoot);
-                if ($exit !== 0) {
-                    warning("boost:update завершился с кодом $exit. Проверь вывод выше.");
-                }
-            } else {
-                warning('Не забудьте запустить php artisan boost:update');
-            }
+            warning('Не забудьте запустить php artisan boost:update');
         }
 
         outro('Готово.');
         return 0;
-    }
-
-    private static function runArtisanBoostUpdate(string $projectRoot): int
-    {
-        $cwd = getcwd();
-        @chdir($projectRoot);
-
-        $cmd = PHP_BINARY . ' artisan boost:update';
-        $exitCode = 0;
-
-        // passthru preserves output formatting.
-        passthru($cmd, $exitCode);
-
-        if ($cwd !== false) {
-            @chdir($cwd);
-        }
-
-        return (int) $exitCode;
     }
 
     private static function unknownCommand(string $command): int
@@ -340,8 +338,11 @@ Options (init/sync):
   --presets=laravel,nuxt-ui,element-plus   список пресетов (через запятую)
   --preset=laravel                         можно повторять несколько раз
   --mode=symlink|copy
+  --layout=flat-numbered|folders
+  --target=.ai/guidelines
   --laravel-macros
   --skills[=true|false]
+  --skills-target=.ai/skills
   --config=.pfm-guidelines.json
   --write-config
   --force
@@ -349,14 +350,10 @@ Options (init/sync):
   --no-interaction
   --boost-update
 
-Deprecated (ignored; Boost v2.0 contract uses fixed paths):
-  --layout=flat-numbered|folders
-  --target=.ai/guidelines
-  --skills-target=.ai/skills
 Examples:
   php vendor/bin/pfm-guidelines init
   php vendor/bin/pfm-guidelines sync
-  php vendor/bin/pfm-guidelines sync --no-interaction --mode=copy --presets=laravel,element-plus --write-config
+  php vendor/bin/pfm-guidelines sync --no-interaction --layout=flat-numbered --mode=copy --presets=laravel,element-plus --write-config
 
 TXT;
 
