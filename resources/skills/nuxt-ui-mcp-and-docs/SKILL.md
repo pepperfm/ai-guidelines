@@ -1,6 +1,6 @@
 ---
 name: nuxt-ui-mcp-and-docs
-description: 'Как пользоваться MCP Nuxt UI и локальным зеркалом документации.'
+description: 'MCP Nuxt UI и локальное зеркало доков: как искать компоненты/props/slots и проверять поведение. Активируй при любых вопросах по API Nuxt UI.'
 ---
 
 # Skill: Nuxt UI — MCP & Docs Mirror

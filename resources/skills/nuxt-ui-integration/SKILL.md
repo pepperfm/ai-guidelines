@@ -1,6 +1,6 @@
 ---
 name: nuxt-ui-integration
-description: 'Интеграция Nuxt UI в Laravel 12 + Inertia + Vite: vite config, app.ts, CSS, UApp, isolate.'
+description: 'Интеграция Nuxt UI в Laravel + Inertia + Vite: vite.config.ts, app.ts, CSS, UApp, isolate. Активируй при установке и настройке Nuxt UI.'
 ---
 
 # Skill: Nuxt UI — Интеграция с Laravel 12 + Inertia + Vite

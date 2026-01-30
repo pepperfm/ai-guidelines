@@ -1,6 +1,6 @@
 ---
 name: laravel-php-style
-description: 'Правила стиля PHP/Laravel: strict_types, helpers, Arr::get, FQCN, импорты, типы ответов.'
+description: 'Стиль PHP/Laravel в проекте: strict_types, helpers, Arr::get, FQCN, импорты, типы HTTP-ответов. Активируй при работе с backend-кодом.'
 ---
 
 # Skill: Laravel — PHP & Laravel Code Style

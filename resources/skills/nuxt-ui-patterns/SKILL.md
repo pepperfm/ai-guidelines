@@ -1,6 +1,6 @@
 ---
 name: nuxt-ui-patterns
-description: 'Паттерны Nuxt UI (Laravel + Inertia): overlays, формы, темизация, конвенции.'
+description: 'Паттерны Nuxt UI для Laravel + Inertia: overlays, формы, темизация, конвенции и примеры. Активируй при проектировании UI и компонентов.'
 ---
 
 # Skill: Nuxt UI — Паттерны, темизация, конвенции (Laravel + Inertia)

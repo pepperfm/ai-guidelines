@@ -1,6 +1,6 @@
 ---
 name: laravel-macros
-description: 'Как подключаем и используем Pepperfm\LaravelMacros: профили, конфликты, макросы.'
+description: 'Pepperfm\LaravelMacros: профили, конфликты, добавление/использование макросов. Активируй, когда установлена библиотека pepperfm/macros-for-laravel, или включены MACROS_*.'
 ---
 
 # Laravel Macros — Гайд по использованию (Pepperfm\LaravelMacros)

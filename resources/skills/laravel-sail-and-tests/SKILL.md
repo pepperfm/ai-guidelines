@@ -1,6 +1,6 @@
 ---
 name: laravel-sail-and-tests
-description: 'Sail/Artisan/Composer/Tests: команды, типовые сценарии, таймауты и правила вывода.'
+description: 'Sail (Artisan/Composer/Bun) и тесты: команды, типовые сценарии, таймауты, правила вывода. Активируй при работе с консольными командами и CI через Sail.'
 ---
 
 # Skill: Laravel — Sail, Artisan, Composer, Tests
