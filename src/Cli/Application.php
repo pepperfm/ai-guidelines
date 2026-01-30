@@ -129,6 +129,21 @@ final class Application
             required: true,
         );
 
+        $skillsDefault = self::boolOpt($opts, 'skills') ?? true;
+        $skills = confirm(
+            label: 'Публиковать skills в .ai/skills?',
+            default: $skillsDefault,
+        );
+
+        $skillsTargetDefault = (string) ($opts['skills_target'] ?? '.ai/skills');
+        $skillsTarget = $skills
+            ? text(
+                label: 'Куда положить skills внутри проекта?',
+                default: $skillsTargetDefault,
+                required: true,
+            )
+            : $skillsTargetDefault;
+
         $writeConfig = confirm(
             label: "Сохранить конфиг в $configPath?",
         );
@@ -139,6 +154,8 @@ final class Application
             target: $target,
             presets: $presets,
             laravelMacros: $laravelMacros,
+            skills: $skills,
+            skillsTarget: $skillsTarget,
         );
 
         if ($writeConfig) {
@@ -182,6 +199,8 @@ final class Application
         $layout = isset($opts['layout']) ? (string) $opts['layout'] : null;
         $target = isset($opts['target']) ? (string) $opts['target'] : null;
         $laravelMacros = self::boolOpt($opts, 'laravel_macros');
+        $skills = self::boolOpt($opts, 'skills');
+        $skillsTarget = isset($opts['skills_target']) ? (string) $opts['skills_target'] : null;
 
         if ($config === null) {
             if ($presetsFromFlags === [] && !$noInteraction) {
@@ -206,6 +225,8 @@ final class Application
                 target: $target ?? '.ai/guidelines',
                 presets: $presetsFromFlags,
                 laravelMacros: $laravelMacros ?? false,
+                skills: $skills ?? true,
+                skillsTarget: $skillsTarget ?? '.ai/skills',
             );
 
             if ($writeConfig && self::writeConfig($configPath, $config, (bool) ($opts['dry_run'] ?? false))) {
@@ -227,6 +248,12 @@ final class Application
             if ($laravelMacros !== null) {
                 $config->laravelMacros = $laravelMacros;
             }
+            if ($skills !== null) {
+                $config->skills = $skills;
+            }
+            if ($skillsTarget !== null) {
+                $config->skillsTarget = $skillsTarget;
+            }
 
             if ($writeConfig && self::writeConfig($configPath, $config, (bool) ($opts['dry_run'] ?? false))) {
                 info("Конфиг обновлён: $configPath");
@@ -245,7 +272,7 @@ final class Application
         $dryRun = (bool) ($opts['dry_run'] ?? false);
 
         note('Выбранные пресеты: ' . implode(', ', $config->presets));
-        note('Layout: ' . $config->layout . ' | Mode: ' . $config->mode . ' | Target: ' . $config->target);
+        note('Layout: ' . $config->layout . ' | Mode: ' . $config->mode . ' | Target: ' . $config->target . ' | Skills: ' . ($config->skills ? 'on' : 'off') . ' | Skills target: ' . $config->skillsTarget);
 
         $installer = new Installer(
             projectRoot: $projectRoot,
@@ -314,6 +341,8 @@ Options (init/sync):
   --layout=flat-numbered|folders
   --target=.ai/guidelines
   --laravel-macros
+  --skills[=true|false]
+  --skills-target=.ai/skills
   --config=.pfm-guidelines.json
   --write-config
   --force

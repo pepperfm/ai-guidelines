@@ -61,6 +61,10 @@ final readonly class Installer
             }
         }
 
+        if ($config->skills) {
+            $this->installSkills($config, $packageBase, $result);
+        }
+
         return $result;
     }
 
@@ -87,6 +91,64 @@ final readonly class Installer
 
         $this->ensureDir(dirname($macrosDst), $result);
         $this->linkOrCopy($config, $macrosSrc, $macrosDst, $result);
+    }
+
+
+    private function installSkills(Config $config, string $packageBase, InstallResult $result): void
+    {
+        $skillsResourceBase = $packageBase . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'skills';
+        if (!is_dir($skillsResourceBase)) {
+            $result->addWarning("Skills resource dir not found: $skillsResourceBase");
+            return;
+        }
+
+        $skillsTargetBase = Paths::normalize($this->projectRoot . DIRECTORY_SEPARATOR . $config->skillsTarget);
+        $this->ensureDir($skillsTargetBase, $result);
+
+        // Optional: index/readme for humans.
+        $readmeSrc = $skillsResourceBase . DIRECTORY_SEPARATOR . 'README.md';
+        if (is_file($readmeSrc)) {
+            $readmeDst = $skillsTargetBase . DIRECTORY_SEPARATOR . 'README.md';
+            $this->ensureDir(dirname($readmeDst), $result);
+            $this->linkOrCopy($config, $readmeSrc, $readmeDst, $result);
+        }
+
+        $skillNames = Skills::forConfig($config);
+
+        foreach ($skillNames as $skillName) {
+            $srcDir = $skillsResourceBase . DIRECTORY_SEPARATOR . $skillName;
+            if (!is_dir($srcDir)) {
+                $result->addWarning("Skill '$skillName' not found: $srcDir");
+                continue;
+            }
+
+            $dstDir = $skillsTargetBase . DIRECTORY_SEPARATOR . $skillName;
+            $this->installTree($config, $srcDir, $dstDir, $result);
+        }
+    }
+
+    private function installTree(Config $config, string $srcDir, string $dstDir, InstallResult $result): void
+    {
+        $this->ensureDir($dstDir, $result);
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($srcDir, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::SELF_FIRST,
+        );
+
+        foreach ($iterator as $item) {
+            $srcPath = $item->getPathname();
+            $rel = substr($srcPath, strlen($srcDir) + 1);
+            $dstPath = $dstDir . DIRECTORY_SEPARATOR . $rel;
+
+            if ($item->isDir()) {
+                $this->ensureDir($dstPath, $result);
+                continue;
+            }
+
+            $this->ensureDir(dirname($dstPath), $result);
+            $this->linkOrCopy($config, $srcPath, $dstPath, $result);
+        }
     }
 
     private function ensureDir(string $dir, InstallResult $result): void

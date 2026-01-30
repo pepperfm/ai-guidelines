@@ -6,7 +6,7 @@ namespace PepperFM\AiGuidelines\Cli;
 
 final class Config
 {
-    public const int VERSION = 3;
+    public const int VERSION = 4;
 
     public function __construct(
         public string $mode = 'symlink', // symlink|copy
@@ -15,6 +15,8 @@ final class Config
         /** @var array<int, string> */
         public array $presets = ['laravel'],
         public bool $laravelMacros = false,
+        public bool $skills = true,
+        public string $skillsTarget = '.ai/skills',
     ) {
     }
 
@@ -30,6 +32,8 @@ final class Config
             'target' => $this->target,
             'presets' => array_values($this->presets),
             'laravel_macros' => $this->laravelMacros,
+            'skills' => $this->skills,
+            'skills_target' => $this->skillsTarget,
         ];
     }
 
@@ -39,6 +43,10 @@ final class Config
         $layout = is_string($data['layout'] ?? null) ? (string) $data['layout'] : 'flat-numbered';
         $target = is_string($data['target'] ?? null) ? (string) $data['target'] : '.ai/guidelines';
         $laravelMacros = (bool) ($data['laravel_macros'] ?? false);
+
+        // Backwards compatible defaults: skills ON by default.
+        $skills = array_key_exists('skills', $data) ? (bool) $data['skills'] : true;
+        $skillsTarget = is_string($data['skills_target'] ?? null) ? (string) $data['skills_target'] : '.ai/skills';
 
         $presets = is_array($data['presets'] ?? null) ? array_values($data['presets']) : ['laravel'];
         $presets = array_map('strval', $presets);
@@ -57,6 +65,8 @@ final class Config
             target: $target,
             presets: $presets ?: ['laravel'],
             laravelMacros: $laravelMacros,
+            skills: $skills,
+            skillsTarget: $skillsTarget,
         );
     }
 
