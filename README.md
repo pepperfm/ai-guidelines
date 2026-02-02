@@ -2,11 +2,10 @@
 
 Небольшой Composer‑пакет для установки **личных AI‑гайдлайнов (Codex / Boost)** в проект.
 
-Пакет хранит 3 пресета (по одному `core.md`):
+Пакет хранит 2 пресета (по одному `core.md`):
 
 - `laravel` — Codex — Laravel/Sail/MCP Guidelines (Personal Overrides)
 - `nuxt-ui` — Nuxt UI — Project Guidelines (Laravel 12 + Vite + Inertia + Tailwind v4)
-- `element-plus` — Element Plus + Vue 3
 
 CLI умеет:
 
@@ -39,7 +38,6 @@ vendor/bin/pfm-guidelines
 ```text
 .ai/guidelines/laravel/core.md
 .ai/guidelines/nuxt-ui/core.md
-.ai/guidelines/element-plus/core.md
 ```
 
 Опционально: `laravel/macros.md` (если включено в prompt).
@@ -55,12 +53,12 @@ vendor/bin/pfm-guidelines sync
 ## Без интерактива (CI / scripts)
 
 ```bash
-vendor/bin/pfm-guidelines sync --no-interaction --mode=copy --presets=laravel,element-plus
+vendor/bin/pfm-guidelines sync --no-interaction --mode=copy --presets=laravel,nuxt-ui
 ```
 
 Доступные параметры:
 
-- `--presets=laravel,nuxt-ui,element-plus`
+- `--presets=laravel,nuxt-ui`
 - `--mode=symlink|copy`
 - `--target=.ai/guidelines`
 - `--laravel-macros`

@@ -24,10 +24,6 @@ final class Presets
             'label' => 'Nuxt UI (Vue/Vite) inside Laravel + Inertia',
             'flat' => '11-nuxt-ui.md',
         ],
-        'element-plus' => [
-            'label' => 'Element Plus + Vue 3',
-            'flat' => '12-element-plus.md',
-        ],
     ];
 
     /** @return array<string, string> */

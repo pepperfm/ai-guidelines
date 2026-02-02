@@ -215,7 +215,7 @@ final class Application
             $presetsFromFlags = Presets::filterValid($presetsFromFlags);
 
             if ($presetsFromFlags === []) {
-                error('Не указаны пресеты. Используй --presets=laravel,element-plus или запусти init.');
+                error('Не указаны пресеты. Используй --presets=laravel,nuxt-ui или запусти init.');
                 return 1;
             }
 
@@ -335,7 +335,7 @@ Usage:
   pfm-guidelines help            показать эту справку
 
 Options (init/sync):
-  --presets=laravel,nuxt-ui,element-plus   список пресетов (через запятую)
+  --presets=laravel,nuxt-ui                список пресетов (через запятую)
   --preset=laravel                         можно повторять несколько раз
   --mode=symlink|copy
   --layout=flat-numbered|folders
@@ -353,7 +353,7 @@ Options (init/sync):
 Examples:
   php vendor/bin/pfm-guidelines init
   php vendor/bin/pfm-guidelines sync
-  php vendor/bin/pfm-guidelines sync --no-interaction --layout=flat-numbered --mode=copy --presets=laravel,element-plus --write-config
+  php vendor/bin/pfm-guidelines sync --no-interaction --layout=flat-numbered --mode=copy --presets=laravel,nuxt-ui --write-config
 
 TXT;
 

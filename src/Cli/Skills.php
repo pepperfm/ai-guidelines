@@ -26,9 +26,6 @@ final class Skills
             'nuxt-ui-integration',
             'nuxt-ui-patterns',
         ],
-        'element-plus' => [
-            'element-plus-guide',
-        ],
     ];
 
     /**

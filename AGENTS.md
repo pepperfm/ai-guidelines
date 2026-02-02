@@ -3,7 +3,7 @@
 ## Project Structure & Module Organization
 - `src/` holds the PHP source (PSR-4 `PepperFM\\AiGuidelines\\`), with CLI logic in `src/Cli/`.
 - `bin/pfm-guidelines` is the CLI entrypoint used by Composer.
-- `resources/guidelines/` contains preset Markdown files such as `laravel/core.md`, `nuxt-ui/core.md`, `element-plus/core.md`, and shared files under `_core/`.
+- `resources/boost/guidelines/` contains preset Markdown files such as `laravel/core.md`, `nuxt-ui/core.md`, and shared files under `_core/`.
 - `composer.json` defines dependencies and autoloading; `vendor/` is generated after install.
 
 ## Build, Test, and Development Commands
@@ -16,7 +16,7 @@
 - PHP 8.3+, `declare(strict_types=1);` at the top of PHP files.
 - Follow PSR-12: 4-space indentation, one class per file, `PascalCase` class names, namespaces matching folder structure.
 - CLI options use kebab-case (`--no-interaction`, `--dry-run`).
-- Preset files live at `resources/guidelines/<preset>/core.md`; keep filenames lowercase and consistent.
+- Preset files live at `resources/boost/guidelines/<preset>/core.md`; keep filenames lowercase and consistent.
 
 ## Testing Guidelines
 - No automated test suite is currently included.

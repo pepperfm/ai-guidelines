@@ -1,7 +1,7 @@
 {{-- AUTO-GENERATED FILE. DO NOT EDIT DIRECTLY. --}}
 {{-- This file is generated from markdown sources in resources/boost/guidelines/**/*.md --}}
 {{-- Run: php scripts/build-boost-guidelines.php --}}
-{{-- Checksum: 7a0ecb6346bfebca12f5d2adeec187bcfe478028 --}}
+{{-- Checksum: 85f0e7d7feabd9775c39e8a8d250afbb5094a6f8 --}}
 @verbatim
 <!-- BEGIN: _core/core.md -->
 
@@ -81,45 +81,10 @@
 Если в проекте есть каталог `.ai/skills/` — это **набор модульных навыков**.
 
 - **Не подгружай все навыки сразу.** Выбирай 1–3 релевантных под задачу (чтобы экономить контекст/токены).
-- Если задача затрагивает конкретный стек — сначала подключай профильный skill (например, Nuxt UI / Element Plus / Laravel стиль).
+- Если задача затрагивает конкретный стек — сначала подключай профильный skill (например, Nuxt UI / Laravel стиль).
 - В пресетах (`10-*.md`, `11-*.md`) есть список рекомендуемых skills по задачам.
 
 <!-- END: _core/core.md -->
-
----
-
-<!-- BEGIN: element-plus/core.md -->
-
-# Element Plus + Vue 3 — Project Guidelines (Lite)
-
-**Версия:** 2026‑01‑30
-
-Этот файл — **тонкий**: только MUST/ограничения. Полный гайд с примерами вынесен в skill `element-plus-guide`.
-
----
-
-## 1) Skills
-
-- `element-plus-guide` — полный гайд: подключение, layout, формы, таблицы, диалоги, уведомления, иконки, типовые CRUD‑паттерны.
-
----
-
-## 2) MUST
-
-- Фронтенд строим на **Vue 3** и **Element Plus**.
-- Не подключаем другие UI‑фреймворки, если это явно не попросили.
-- Для бизнес-UI (формы, таблицы, модалки, уведомления) используем компоненты Element Plus, если это возможно.
-- Компоненты пишем на Vue 3 с `<script setup>` и Composition API.
-- Для сообщений/confirm используем `ElMessage` / `ElNotification` / `ElMessageBox`, не `alert()`.
-
-## 3) MUST NOT
-
-- Не генерировать «сырой» HTML `<table>` для бизнес‑данных, если `el-table` подходит.
-- Не переопределять тему/стили огромными инлайн‑стилями без необходимости.
-
-> Детали и примеры: `.ai/skills/element-plus-guide/SKILL.md`.
-
-<!-- END: element-plus/core.md -->
 
 ---
 
@@ -130,7 +95,7 @@
 **Версия:** 2026‑01‑30
 
 Этот документ — **короткая версия** Laravel‑правил: только MUST/ограничения.
-Детальные примеры и разъяснения вынесены в `.ai/skills (SKILLS), чтобы экономить контекст/токены.
+Детальные примеры и разъяснения вынесены в `.ai/skills/**` (SKILLS), чтобы экономить контекст/токены.
 
 > Общие правила (приоритеты, язык, контейнер, лимиты логов) см. `.ai/guidelines/01-core.md`.
 

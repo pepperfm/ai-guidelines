@@ -27,7 +27,6 @@ declare(strict_types=1);
  *   laravel/core.md
  *   laravel/macros.md
  *   nuxt-ui/core.md
- *   element-plus/core.md
  */
 
 final class BuildBoostGuidelines

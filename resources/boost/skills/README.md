@@ -14,7 +14,6 @@
 - `laravel-php-style/SKILL.md`
 - `nuxt-ui-mcp-and-docs/SKILL.md`
 - `nuxt-ui-patterns/SKILL.md`
-- `element-plus-guide/SKILL.md`
 
 ## Рекомендация по экономии контекста
 
