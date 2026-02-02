@@ -317,11 +317,12 @@ public function __construct(
 
 ```php
 use Spatie\LaravelData\Attributes\DataCollectionOf;
+use Illuminate\Support\Collection;
 
 public function __construct(
     public readonly string $title,
     #[DataCollectionOf(SongData::class)]
-    public readonly array $songs,
+    public readonly Collection $songs,
 ) {
 }
 ```
