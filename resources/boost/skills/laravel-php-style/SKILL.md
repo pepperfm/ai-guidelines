@@ -13,8 +13,6 @@ description: 'Стиль PHP/Laravel в проекте: strict_types, helpers, A
 - Нужно правило `Arr::get` для опциональных ключей.
 - Нужно правило про FQCN в сигнатурах.
 
-> Эта skill — «детальная часть» пресета Laravel. Краткие MUST лежат в `.ai/guidelines/10-laravel.md`.
-
 ---
 
 ## 1) `declare(strict_types=1);` (MUST)
@@ -60,7 +58,7 @@ db(?string $connection = null): \Illuminate\Database\ConnectionInterface
 - для «значение или дефолт (в т.ч. коллбэк)» — `valueOrDefault(...)`;
 - для Query Builder/транзакций вне Eloquent — `db()` вместо `DB::`.
 
-_Реализацию см. в коде проекта (поиск по `function user(` / `function when(`)._ 
+_Реализацию см. в коде проекта (поиск по `function user(` / `function when(`)._
 
 ---
 
@@ -84,10 +82,10 @@ $limit = (int) ($payload['limit'] ?? 10);
 
 Исключения (прямой доступ допустим):
 - массивы, где ключи **гарантированы контрактом**:
-  - `$request->validated()` с `required` / `present` правилами;
-  - локально сформированные массивы в **этом же** скоупе;
-  - результат `array_merge`/`array_replace` с обязательными ключами;
-  - итерация по заранее определённым ключам (константы, enum‑map);
+    - `$request->validated()` с `required` / `present` правилами;
+    - локально сформированные массивы в **этом же** скоупе;
+    - результат `array_merge`/`array_replace` с обязательными ключами;
+    - итерация по заранее определённым ключам (константы, enum‑map);
 - когда отсутствие ключа — **логическая ошибка** и нужен явный `Undefined index`.
 
 ---
@@ -138,11 +136,11 @@ try {
 
 - **Все** публичные методы имеют явный return type.
 - Экшены контроллеров возвращают один из:
-  - `\Illuminate\Http\JsonResponse`
-  - `\Illuminate\Http\RedirectResponse`
-  - `\Symfony\Component\HttpFoundation\Response`
-  - `\Inertia\Response`
-  - `\Illuminate\Contracts\Support\Responsable`
+    - `\Illuminate\Http\JsonResponse`
+    - `\Illuminate\Http\RedirectResponse`
+    - `\Symfony\Component\HttpFoundation\Response`
+    - `\Inertia\Response`
+    - `\Illuminate\Contracts\Support\Responsable`
 - Если знаешь точный тип — **предпочитай конкретный** (например, `JsonResponse`).
 
 ---
@@ -218,9 +216,9 @@ logger()->warning('Unexpected state', ['id' => $id]);
 1. **Laravel**: `Illuminate\*`, `Laravel\*` (и при необходимости `Symfony\*`, относимый к экосистеме фреймворка).
 2. **Сторонние библиотеки**: любой вендор, не входящий в Laravel (`Spatie\*`, `GuzzleHttp\*`, `Carbon\*`, …).
 3. **Наши `App\*`** — в таком под‑порядке:
-   - `App\Enums\*`, `App\Services\*`, `App\Support\*`, `App\Actions\*`, `App\DTOs\*`.
-   - Requests/Resources/Contracts/Abstracts (слои приложения).
-   - `App\Models\*`.
+    - `App\Enums\*`, `App\Services\*`, `App\Support\*`, `App\Actions\*`, `App\DTOs\*`.
+    - Requests/Resources/Contracts/Abstracts (слои приложения).
+    - `App\Models\*`.
 
 Внутри каждой группы — лексикографическая сортировка по FQCN.
 

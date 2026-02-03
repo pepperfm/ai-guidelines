@@ -12,7 +12,7 @@ description: 'Sail (Artisan/Composer/Bun) и тесты: команды, тип�
 - Нужно подсказать запуск миграций/сидов/очередей/кэшей.
 - Нужно запустить/подсказать тесты.
 
-> Если в проекте есть `.ai/guidelines/01-core.md` и `10-laravel.md` — эта skill дополняет их, но не противоречит.
+> Если в проекте есть skill `laravel-php-style` и `laravel-senior-analyst` — эта skill дополняет их, но не противоречит.
 
 ---
 
@@ -21,11 +21,13 @@ description: 'Sail (Artisan/Composer/Bun) и тесты: команды, тип�
 Проект работает в Docker через **Laravel Sail**.
 
 ### Разрешено
+
 - `./vendor/bin/sail artisan ...`
 - `./vendor/bin/sail composer ...`
 - `./vendor/bin/sail bun ...`
 
 ### Запрещено
+
 - `docker compose exec ...` напрямую
 - хостовый `php artisan ...` (вне контейнера)
 - хостовый `composer ...` (вне контейнера)
@@ -53,18 +55,23 @@ description: 'Sail (Artisan/Composer/Bun) и тесты: команды, тип�
 
 Примеры:
 ```bash
+
 # Миграции
+
 ./vendor/bin/sail artisan migrate
 ./vendor/bin/sail artisan migrate:fresh --seed
 
 # Генерация
+
 ./vendor/bin/sail artisan make:controller UserController
 ./vendor/bin/sail artisan make:model Order -mfc
 
 # Очереди
+
 ./vendor/bin/sail artisan queue:work --once
 
 # Кэши
+
 ./vendor/bin/sail artisan config:cache
 ./vendor/bin/sail artisan route:cache
 ```
@@ -76,16 +83,21 @@ description: 'Sail (Artisan/Composer/Bun) и тесты: команды, тип�
 ### 4.1 Запуск
 
 ```bash
+
 # Все тесты
+
 ./vendor/bin/sail artisan test
 
 # Конкретный файл
+
 ./vendor/bin/sail artisan test tests/Feature/UserTest.php
 
 # Фильтр по имени теста
+
 ./vendor/bin/sail artisan test --filter=test_user_can_login
 
 # Компактный вывод
+
 ./vendor/bin/sail artisan test --compact
 ```
 
@@ -104,11 +116,14 @@ description: 'Sail (Artisan/Composer/Bun) и тесты: команды, тип�
 ## 5) Composer / bun
 
 ```bash
+
 # Composer
+
 ./vendor/bin/sail composer i
 ./vendor/bin/sail composer r vendor/package
 
 # bun
+
 ./vendor/bin/sail bun i
 ./vendor/bin/sail bun run dev
 ./vendor/bin/sail bun run build
