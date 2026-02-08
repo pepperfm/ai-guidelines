@@ -5,7 +5,7 @@
 Этот файл — **тонкий**: только MUST/ограничения по Nuxt UI в стеке *Laravel + Inertia + Vite + Tailwind*.
 Детальная интеграция, паттерны и примеры вынесены в `.ai/skills/nuxt-ui-*`, чтобы экономить контекст/токены.
 
-> Общие правила см. `.ai/guidelines/01-core.md`. Laravel‑правила см. `10-laravel.md`.
+> Общие правила (Core) см. в target: `01-core.md` (layout `flat-numbered`) или `_core/core.md` (layout `folders`). Laravel‑правила: `10-laravel.md` или `laravel/core.md`.
 
 ---
 

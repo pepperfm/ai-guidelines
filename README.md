@@ -31,16 +31,28 @@ vendor/bin/pfm-guidelines
 
 1) спросит какие пресеты подключить,
 2) если выбран `laravel`, спросит публиковать ли `laravel/macros.md`,
-3) спросит режим (symlink/copy),
-4) спросит путь назначения (по умолчанию: `.ai/guidelines`),
-5) создаст/обновит файлы вида:
+3) спросит раскладку (layout): `flat-numbered` или `folders`,
+4) спросит режим (symlink/copy),
+5) спросит путь назначения (target; по умолчанию зависит от layout),
+6) создаст/обновит файлы.
 
+Пример для layout `flat-numbered` (по умолчанию target: `.ai/guidelines`):
 ```text
-.ai/guidelines/laravel/core.md
-.ai/guidelines/nuxt-ui/core.md
+.ai/guidelines/01-core.md
+.ai/guidelines/10-laravel.md
+.ai/guidelines/11-nuxt-ui.md
+.ai/guidelines/011-laravel-macros.md   (опционально)
 ```
 
-Опционально: `laravel/macros.md` (если включено в prompt).
+Пример для layout `folders` (по умолчанию target: `.ai/guidelines/pepperfm`):
+```text
+.ai/guidelines/pepperfm/_core/core.md
+.ai/guidelines/pepperfm/laravel/core.md
+.ai/guidelines/pepperfm/laravel/macros.md   (опционально)
+.ai/guidelines/pepperfm/nuxt-ui/core.md
+```
+
+Опционально: skills в `.ai/skills` (по умолчанию включено).
 
 Также создаст конфиг в корне проекта: `.pfm-guidelines.json`.
 

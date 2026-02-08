@@ -6,6 +6,21 @@ namespace PepperFM\AiGuidelines\Cli;
 
 final class Paths
 {
+    public static function isAbsolute(string $path): bool
+    {
+        if ($path === '') {
+            return false;
+        }
+
+        // Unix root
+        if (str_starts_with($path, DIRECTORY_SEPARATOR)) {
+            return true;
+        }
+
+        // Windows drive root like C:\ or C:/
+        return preg_match('~^[A-Za-z]:[\\\\/]~', $path) === 1;
+    }
+
     /*
      * Return absolute path to package base directory (the directory that contains composer.json).
      */

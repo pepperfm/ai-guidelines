@@ -17,9 +17,13 @@ final readonly class Installer
     {
         $result = new InstallResult();
 
-        $targetBase = Paths::normalize($this->projectRoot . DIRECTORY_SEPARATOR . $config->target);
+        $targetBase = Paths::normalize(
+            Paths::isAbsolute($config->target)
+                ? $config->target
+                : ($this->projectRoot . DIRECTORY_SEPARATOR . $config->target),
+        );
         $packageBase = Paths::packageBase();
-        $resourceBase = $packageBase . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'guidelines';
+        $resourceBase = $packageBase . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'boost' . DIRECTORY_SEPARATOR . 'guidelines';
 
         $this->ensureDir($targetBase, $result);
 
@@ -96,13 +100,17 @@ final readonly class Installer
 
     private function installSkills(Config $config, string $packageBase, InstallResult $result): void
     {
-        $skillsResourceBase = $packageBase . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'skills';
+        $skillsResourceBase = $packageBase . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'boost' . DIRECTORY_SEPARATOR . 'skills';
         if (!is_dir($skillsResourceBase)) {
             $result->addWarning("Skills resource dir not found: $skillsResourceBase");
             return;
         }
 
-        $skillsTargetBase = Paths::normalize($this->projectRoot . DIRECTORY_SEPARATOR . $config->skillsTarget);
+        $skillsTargetBase = Paths::normalize(
+            Paths::isAbsolute($config->skillsTarget)
+                ? $config->skillsTarget
+                : ($this->projectRoot . DIRECTORY_SEPARATOR . $config->skillsTarget),
+        );
         $this->ensureDir($skillsTargetBase, $result);
 
         // Optional: index/readme for humans.

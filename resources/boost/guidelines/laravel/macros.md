@@ -15,4 +15,4 @@
 - Видишь в коде вызовы вида `Arr::bool(...)`, `collect(...)->filterNotNull()`, или любые кастомные макросы.
 - Нужно объяснить/настроить профили, политики конфликтов (`conflicts`, `unreachable`) или добавить кастомную группу.
 
-> Общие правила (приоритеты, язык, контейнер) — в `.ai/guidelines/01-core.md`.
+> Общие правила (Core) см. в target: `01-core.md` (layout `flat-numbered`) или `_core/core.md` (layout `folders`).

@@ -10,7 +10,7 @@ final class Skills
      * Skill folders (kebab-case) grouped by preset.
      *
      * These names must match:
-     * - directory name: resources/skills/<skill-name>
+     * - directory name: resources/boost/skills/<skill-name>
      * - installed path: .ai/skills/<skill-name>
      * - YAML frontmatter in SKILL.md: name: <skill-name>
      *

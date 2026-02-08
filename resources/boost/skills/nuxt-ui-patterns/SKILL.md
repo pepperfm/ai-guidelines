@@ -248,13 +248,13 @@ export default antfu({
 - Programmatic overlays **через проектные composables** (например, `useContact()`), а не прямые вызовы `useOverlay()` в страницах.
 - Везде использовать **bun** (install/dev/build).
 - ESLint‑конфиг как выше; порядок импортов — через `lint:fix`.
-- Песочница/контейнер/логи: см. `.ai/guidelines/01-core.md`.
+- Песочница/контейнер/логи: см. Core guideline в `.ai/guidelines` (в target это `01-core.md` или `_core/core.md`, зависит от layout).
 
 **MUST NOT**
 - Не предлагать Nuxt‑модули/`nuxt.config.ts` — у нас Vue/Vite‑режим (без Nuxt).
 - Не писать «карточки/модалки/кнопки» руками из `div` + классы; использовать компоненты Nuxt UI.
 - Не импортировать `useToast`/`useOverlay` прямо в страницах — только через проектные composables.
-- Песочница/контейнер: см. `.ai/guidelines/01-core.md`.
+- Песочница/контейнер: см. Core guideline в `.ai/guidelines` (в target это `01-core.md` или `_core/core.md`, зависит от layout).
 
 ---
 

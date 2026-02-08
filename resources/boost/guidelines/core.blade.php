@@ -1,7 +1,7 @@
 {{-- AUTO-GENERATED FILE. DO NOT EDIT DIRECTLY. --}}
 {{-- This file is generated from markdown sources in resources/boost/guidelines/**/*.md --}}
 {{-- Run: php scripts/build-boost-guidelines.php --}}
-{{-- Checksum: 85f0e7d7feabd9775c39e8a8d250afbb5094a6f8 --}}
+{{-- Checksum: 381b8e5d59f38f6e0edb88d904c0da4d40ea8ade --}}
 @verbatim
 <!-- BEGIN: _core/core.md -->
 
@@ -10,7 +10,13 @@
 **Версия:** 2026‑01‑30
 
 Этот файл содержит **общие правила**, применимые ко всем проектам в репозитории (Laravel / Inertia / Nuxt UI / Vite и т.д.).
-Файлы вида `10-*.md`, `11-*.md` и т.п. **расширяют** эти правила, но не должны им противоречить.
+
+## Где искать файлы после установки (SHOULD)
+
+Этот пакет умеет раскладывать гайдлайны двумя способами (зависит от `pfm-guidelines --layout`):
+
+- `flat-numbered`: в target лежат файлы вроде `01-core.md`, `10-laravel.md`, `11-nuxt-ui.md` (и `011-laravel-macros.md`, если включено).
+- `folders`: в target лежат файлы вроде `_core/core.md`, `laravel/core.md`, `nuxt-ui/core.md` (и `laravel/macros.md`, если включено).
 
 ---
 
@@ -82,7 +88,6 @@
 
 - **Не подгружай все навыки сразу.** Выбирай 1–3 релевантных под задачу (чтобы экономить контекст/токены).
 - Если задача затрагивает конкретный стек — сначала подключай профильный skill (например, Nuxt UI / Laravel стиль).
-- В пресетах (`10-*.md`, `11-*.md`) есть список рекомендуемых skills по задачам.
 
 <!-- END: _core/core.md -->
 
@@ -97,7 +102,7 @@
 Этот документ — **короткая версия** Laravel‑правил: только MUST/ограничения.
 Детальные примеры и разъяснения вынесены в `.ai/skills/**` (SKILLS), чтобы экономить контекст/токены.
 
-> Общие правила (приоритеты, язык, контейнер, лимиты логов) см. `.ai/guidelines/01-core.md`.
+> Общие правила (Core) см. в target: `01-core.md` (layout `flat-numbered`) или `_core/core.md` (layout `folders`).
 
 ---
 
@@ -173,7 +178,7 @@
 - Видишь в коде вызовы вида `Arr::bool(...)`, `collect(...)->filterNotNull()`, или любые кастомные макросы.
 - Нужно объяснить/настроить профили, политики конфликтов (`conflicts`, `unreachable`) или добавить кастомную группу.
 
-> Общие правила (приоритеты, язык, контейнер) — в `.ai/guidelines/01-core.md`.
+> Общие правила (Core) см. в target: `01-core.md` (layout `flat-numbered`) или `_core/core.md` (layout `folders`).
 
 <!-- END: laravel/macros.md -->
 
@@ -188,7 +193,7 @@
 Этот файл — **тонкий**: только MUST/ограничения по Nuxt UI в стеке *Laravel + Inertia + Vite + Tailwind*.
 Детальная интеграция, паттерны и примеры вынесены в `.ai/skills/nuxt-ui-*`, чтобы экономить контекст/токены.
 
-> Общие правила см. `.ai/guidelines/01-core.md`. Laravel‑правила см. `10-laravel.md`.
+> Общие правила (Core) см. в target: `01-core.md` (layout `flat-numbered`) или `_core/core.md` (layout `folders`). Laravel‑правила: `10-laravel.md` или `laravel/core.md`.
 
 ---
 

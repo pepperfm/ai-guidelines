@@ -14,13 +14,15 @@
 - Установка пресетов через symlink/copy, dry‑run, force и обработка ошибок — `src/Cli/Installer.php`
 - Конфиг `.pfm-guidelines.json` (чтение/запись, версия) — `src/Cli/Config.php`
 - Реестр пресетов и имена файлов для flat‑раскладки — `src/Cli/Presets.php`
-- Содержимое пресетов (гайдлайны) — `resources/guidelines/*/core.md`, опциональный `resources/guidelines/laravel/macros.md`
+- Содержимое пресетов (гайдлайны) — `resources/boost/guidelines/*/core.md`, опциональный `resources/boost/guidelines/laravel/macros.md`
+- Skills (для агента, устанавливаются в `.ai/skills`) — `resources/boost/skills/*/SKILL.md`
 
 ## Architecture / Structure — кратко про слои/каталоги проекта
 
 - `bin/pfm-guidelines` — entrypoint CLI‑скрипта
 - `src/Cli/*` — логика CLI, конфиг, инсталлятор, утилиты путей
-- `resources/guidelines/` — исходные markdown‑гайдлайны, которые публикуются в проект
+- `resources/boost/guidelines/` — исходные markdown‑гайдлайны, которые публикуются в проект
+- `resources/boost/skills/` — набор skills, которые (опционально) публикуются в `.ai/skills/`
 - `vendor/` — зависимости Composer
 
 ## Development — как запускать, гонять тесты, любые важные команды
