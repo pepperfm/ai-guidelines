@@ -9,7 +9,7 @@ description: 'Интеграция Nuxt UI в Laravel + Inertia + Vite: vite.con
 
 **Когда использовать:**
 - Проект Laravel + Inertia + Vite подключает Nuxt UI (Vue/Vite режим).
-- Нужно правильно настроить `vite.config.ts`, точку входа Vue, CSS, корневой `UApp` и базовый Blade...
+- Нужно правильно настроить `vite.config.ts`, точку входа Vue (`resources/js/app.ts`), CSS, корневой `UApp` и `isolate` в базовом Blade.
 
 > API компонентов всё равно сначала берём через MCP (см. skill `nuxt-ui-mcp-and-docs`).
 

@@ -8,8 +8,16 @@ description: 'Pepperfm\LaravelMacros: профили, конфликты, доб
 **Версия:** 2026‑01‑19
 
 Этот документ описывает, как мы подключаем и используем библиотеку **Pepperfm\LaravelMacros**:
-профили групп, политики конфликтов и встроенные макросы. Формат и стиль совпадают со skills
-`laravel-senior-analyst` / `laravel-php-style`.
+профили групп, политики конфликтов и встроенные макросы. Формат и стиль совпадают с правилами для агента
+(см. skill `laravel-php-style`).
+
+## Когда использовать
+
+- В проекте установлен `pepperfm/macros-for-laravel` (или это планируется).
+- Нужно использовать фасад `Arr`.
+- В задаче упоминаются `MACROS_ENABLED`, `MACROS_PROFILE`, конфиг `config/macros-for-laravel.php`.
+- В коде встречаются вызовы макросов, которых нет в стандартном Laravel (например `Arr::bool(...)`, `collect(...)->filterNotNull()`).
+- Нужно изменить состав групп/профилей, либо политики `conflicts` / `unreachable`.
 
 > ## Precedence & Language (MUST)
 

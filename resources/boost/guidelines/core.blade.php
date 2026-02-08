@@ -1,7 +1,7 @@
 {{-- AUTO-GENERATED FILE. DO NOT EDIT DIRECTLY. --}}
 {{-- This file is generated from markdown sources in resources/boost/guidelines/**/*.md --}}
 {{-- Run: php scripts/build-boost-guidelines.php --}}
-{{-- Checksum: 381b8e5d59f38f6e0edb88d904c0da4d40ea8ade --}}
+{{-- Checksum: 2fc87e51d9e67899e8524ba9b10c4eb8cfb6e222 --}}
 @verbatim
 <!-- BEGIN: _core/core.md -->
 
@@ -121,7 +121,7 @@
 - Каждый PHP-файл начинается с `declare(strict_types=1);`.
 - Все публичные методы имеют явные return type'ы (для HTTP — конкретные типы ответа).
 - Для вендорных типов в сигнатурах — **inline FQCN** (не импортировать ради сокращения).
-- Для опциональных ключей массива — `Illuminate\Support\Arr::get(...)`.
+- Для опциональных ключей массива — `Arr::get(...)`; если нужен soft-cast и подключён `pepperfm/macros-for-laravel` — `Arr::toString(...)` / `Arr::int(...)` / `Arr::bool(...)` (см. skill `laravel-macros`).
 - Helpers > Facades: если есть helper — используем helper.
 - Используем проектные хелперы: `user()`, `when()`, `valueOrDefault()`, `db()`.
 - Контроллеры тонкие, валидация — через `FormRequest`.
@@ -175,7 +175,7 @@
 ## Когда подключать skill `laravel-macros`
 
 - В задаче упоминаются `macros-for-laravel`, `MACROS_PROFILE`, `MACROS_ENABLED`.
-- Видишь в коде вызовы вида `Arr::bool(...)`, `collect(...)->filterNotNull()`, или любые кастомные макросы.
+- Работаешь с фасадом `Arr`, или нужно приводить к типу получаемые из массива значения, по типу `(string) Arr::get(...)` -> `Arr::toString(...)` etc.
 - Нужно объяснить/настроить профили, политики конфликтов (`conflicts`, `unreachable`) или добавить кастомную группу.
 
 > Общие правила (Core) см. в target: `01-core.md` (layout `flat-numbered`) или `_core/core.md` (layout `folders`).

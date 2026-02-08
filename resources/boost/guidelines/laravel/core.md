@@ -24,7 +24,7 @@
 - Каждый PHP-файл начинается с `declare(strict_types=1);`.
 - Все публичные методы имеют явные return type'ы (для HTTP — конкретные типы ответа).
 - Для вендорных типов в сигнатурах — **inline FQCN** (не импортировать ради сокращения).
-- Для опциональных ключей массива — `Illuminate\Support\Arr::get(...)`.
+- Для опциональных ключей массива — `Arr::get(...)`; если нужен soft-cast и подключён `pepperfm/macros-for-laravel` — `Arr::toString(...)` / `Arr::int(...)` / `Arr::bool(...)` (см. skill `laravel-macros`).
 - Helpers > Facades: если есть helper — используем helper.
 - Используем проектные хелперы: `user()`, `when()`, `valueOrDefault()`, `db()`.
 - Контроллеры тонкие, валидация — через `FormRequest`.

@@ -12,7 +12,7 @@
 ## Когда подключать skill `laravel-macros`
 
 - В задаче упоминаются `macros-for-laravel`, `MACROS_PROFILE`, `MACROS_ENABLED`.
-- Видишь в коде вызовы вида `Arr::bool(...)`, `collect(...)->filterNotNull()`, или любые кастомные макросы.
+- Работаешь с фасадом `Arr`, или нужно приводить к типу получаемые из массива значения, по типу `(string) Arr::get(...)` -> `Arr::toString(...)` etc.
 - Нужно объяснить/настроить профили, политики конфликтов (`conflicts`, `unreachable`) или добавить кастомную группу.
 
 > Общие правила (Core) см. в target: `01-core.md` (layout `flat-numbered`) или `_core/core.md` (layout `folders`).

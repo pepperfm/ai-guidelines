@@ -74,6 +74,19 @@ $query = Arr::get($payload, 'q');
 $limit = (int) Arr::get($payload, 'limit', 10);
 ```
 
+Если в проекте включён `pepperfm/macros-for-laravel`, то для приведения типов **предпочитай макросы** из `Pepperfm\LaravelMacros`
+вместо ручных кастов вида `(string) Arr::get(...)` / `(int) Arr::get(...)`:
+
+```php
+use Illuminate\Support\Arr;
+
+$flag = Arr::bool($payload, 'flag');
+$count = Arr::int($payload, 'count');
+$name = Arr::toString($payload, 'name');
+```
+
+Точные сигнатуры/поведение см. в skill `laravel-macros`.
+
 ❌ Bad:
 ```php
 $query = $payload['q'] ?? null;
