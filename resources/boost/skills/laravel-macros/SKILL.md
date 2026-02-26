@@ -5,7 +5,7 @@ description: 'Pepperfm\LaravelMacros: профили, конфликты, доб
 
 # Laravel Macros — Гайд по использованию (Pepperfm\LaravelMacros)
 
-**Версия:** 2026‑01‑19
+**Версия:** 2026‑02‑26
 
 Этот документ описывает, как мы подключаем и используем библиотеку **Pepperfm\LaravelMacros**:
 профили групп, политики конфликтов и встроенные макросы. Формат и стиль совпадают с правилами для агента
@@ -181,3 +181,50 @@ final class MyGroup implements MacroGroupContract
 - Макросы регистрируются автоматически на boot провайдера.
 - `MACROS_ENABLED=false` полностью отключает регистрацию.
 - Следите за конфликтами имён с реальными методами target‑класса.
+
+---
+
+## 7) Практика в Pechka (MUST)
+
+Этот раздел обязателен для рефакторинга `Arr::get(...)` в этом проекте.
+
+### 7.1 Базовые правила
+
+- Если нужен тип (`int|bool|string|array|enum`) — используй макросы (`Arr::int`, `Arr::bool`, `Arr::toString`, `Arr::toArray`, `Arr::toEnum`) вместо `(type) Arr::get(...)`.
+- Не писать `Arr::get($x ?? [], 'key')`: `Arr::get` уже корректно работает с nullable входом; передавай `$x` напрямую.
+- Не писать избыточный дефолт `null`: `Arr::get($arr, 'key', null)` -> `Arr::get($arr, 'key')`.
+- Не добавлять лишние приведения/фолбеки после макросов:
+    - `Arr::toString(..., '')` уже возвращает `string`, не нужен `?? ''` и `(string)`.
+    - `Arr::int(..., 3)` уже возвращает `int`, не нужен `(int)`.
+    - `Arr::bool(..., false)` уже возвращает `bool`, не нужен `(bool)`.
+
+### 7.2 Каноничные замены
+
+```php
+// Было
+(int) Arr::get($payload, 'timeout', 600);
+// Стало
+Arr::int($payload, 'timeout', 600);
+
+// Было
+(bool) Arr::get($payload, 'enabled', false);
+// Стало
+Arr::bool($payload, 'enabled', false);
+
+// Было
+trim((string) Arr::get($tokens, 1, ''));
+// Стало
+trim(Arr::toString($tokens, 1, ''));
+
+// Было
+Arr::get($operation->payload ?? [], 'domains');
+// Стало
+Arr::get($operation->payload, 'domains');
+```
+
+### 7.3 Тесты (критично)
+
+- Если тест вызывает код с `Arr::*` макросами, тест должен бутстрапить Laravel-контейнер:
+    - добавить `uses(Tests\TestCase::class);` в такой unit/feature test-файл.
+- Не добавлять в production-код fallback-проверки вида `Arr::hasMacro(...)` или дублирующую ветку через `Arr::get` только ради теста.
+- Исправляем тестовый bootstrap, а не размываем код условной логикой.

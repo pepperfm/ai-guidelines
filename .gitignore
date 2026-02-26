@@ -3,6 +3,7 @@ composer.lock
 .fleet
 .idea
 .vscode
+.env
 
 .ai-factory*
 .codex
