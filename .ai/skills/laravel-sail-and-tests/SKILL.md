@@ -1,0 +1,1 @@
+../../../resources/boost/skills/laravel-sail-and-tests/SKILL.md

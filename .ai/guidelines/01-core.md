@@ -1,0 +1,1 @@
+../../resources/boost/guidelines/_core/core.md

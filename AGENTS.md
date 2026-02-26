@@ -30,3 +30,48 @@
 
 ## Security & Configuration Notes
 - The CLI writes `.pfm-guidelines.json` and target guideline files; avoid committing user-specific config into this repository.
+
+## Project Overview
+`pepperfm/ai-guidelines` is a Composer CLI package that installs guideline/skill presets into consumer projects via symlink or copy modes.
+
+## Tech Stack
+- **Language:** PHP 8.3
+- **Framework:** Composer package + `laravel/prompts`
+- **Database:** None
+- **ORM:** None
+
+## Project Structure
+```text
+bin/                          # CLI entrypoint
+src/Cli/                      # Core CLI logic and installer modules
+resources/boost/guidelines/   # Guideline preset markdown files
+resources/boost/skills/       # Skill preset files
+scripts/                      # Build helper scripts
+.codex/skills/                # Local Codex skills for this repo
+.claude/skills/               # Local Claude skills for this repo
+```
+
+## Key Entry Points
+| File | Purpose |
+|------|---------|
+| `bin/pfm-guidelines` | Executable entrypoint configured in Composer `bin` |
+| `src/Cli/Application.php` | CLI command dispatch, option parsing, interactive flow |
+| `src/Cli/Installer.php` | File publication engine (`symlink`/`copy`, dry-run, force) |
+| `src/Cli/Config.php` | `.pfm-guidelines.json` config model and IO |
+| `src/Cli/Skills.php` | Skill list selection by chosen presets |
+| `composer.json` | Package metadata, dependencies, autoload, binary declaration |
+
+## Documentation
+| Document | Path | Description |
+|----------|------|-------------|
+| README | `README.md` | Package usage, commands, and examples |
+| Repository Rules | `AGENTS.md` | Working conventions for contributors and agents |
+| Overview Guideline | `.ai/guidelines/00-project-overview.md` | Existing concise project context |
+
+## AI Context Files
+| File | Purpose |
+|------|---------|
+| `AGENTS.md` | Repository rules + project map for agents |
+| `.ai-factory/DESCRIPTION.md` | Project specification and detected stack |
+| `.ai-factory/ARCHITECTURE.md` | Architecture decisions and dependency rules |
+| `.mcp.json` | Project MCP server configuration |

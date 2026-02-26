@@ -1,0 +1,1 @@
+../../resources/boost/guidelines/laravel/core.md

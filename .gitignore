@@ -3,3 +3,11 @@ composer.lock
 .fleet
 .idea
 .vscode
+
+.ai-factory*
+.codex
+.claude
+.junie
+.agents
+.mcp.json
+.pfm-guidelines.json
