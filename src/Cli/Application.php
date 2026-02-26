@@ -19,28 +19,50 @@ use function Laravel\Prompts\warning;
 
 final class Application
 {
+    /** @var array<int, string> */
+    private const array REQUIRED_VALUE_OPTIONS = [
+        'config',
+        'target',
+        'skills_target',
+        'mode',
+        'layout',
+        'presets',
+        'preset',
+    ];
+
     public static function run(array $argv): int
     {
         $args = array_values($argv);
         array_shift($args);
 
-        $command = $args[0] ?? 'init';
-        if (str_starts_with($command, '-')) {
-            $command = 'init';
-        } else {
-            array_shift($args);
+        $rawOpts = self::parseOptions($args);
+
+        $command = 'init';
+        $commandArgs = $args;
+        $firstArg = $args[0] ?? null;
+        if (is_string($firstArg) && $firstArg !== '' && !str_starts_with($firstArg, '-')) {
+            $command = $firstArg;
+            array_shift($commandArgs);
         }
 
-        $opts = self::parseOptions($args);
+        $opts = self::parseOptions($commandArgs);
 
-        if (($opts['help'] ?? false) === true || in_array($command, ['help', '-h', '--help'], true)) {
+        if (($rawOpts['help'] ?? false) === true || in_array($command, ['help', '-h', '--help'], true)) {
             self::printHelp();
             return 0;
         }
 
-        if (in_array($command, ['-V', '--version', 'version'], true)) {
+        if (($rawOpts['version'] ?? false) === true || in_array($command, ['-V', '--version', 'version'], true)) {
             self::printVersion();
             return 0;
+        }
+
+        $validationErrors = self::validateOptions($opts);
+        if ($validationErrors !== []) {
+            foreach ($validationErrors as $validationError) {
+                error($validationError);
+            }
+            return 1;
         }
 
         return match ($command) {
@@ -301,7 +323,22 @@ final class Application
         }
 
         $artisan = $projectRoot . DIRECTORY_SEPARATOR . 'artisan';
-        if (!$dryRun && is_file($artisan)) {
+        $boostUpdate = (bool) ($opts['boost_update'] ?? false);
+
+        if ($dryRun && $boostUpdate) {
+            info('[dry-run] skip php artisan boost:update');
+        } elseif ($boostUpdate) {
+            if (!is_file($artisan)) {
+                warning('Флаг --boost-update проигнорирован: файл artisan не найден.');
+            } else {
+                info('Запуск php artisan boost:update ...');
+                $boostUpdateExitCode = self::runBoostUpdate($artisan);
+                if ($boostUpdateExitCode !== 0) {
+                    outro('Готово, но boost:update завершился с ошибкой.');
+                    return 1;
+                }
+            }
+        } elseif (!$dryRun && is_file($artisan)) {
             warning('Не забудьте запустить php artisan boost:update');
         }
 
@@ -348,11 +385,13 @@ Options (init/sync):
   --force
   --dry-run
   --no-interaction
-  --boost-update
+  --boost-update                           запустить "php artisan boost:update" после sync (если найден artisan)
+  -V, --version                            показать версию CLI
 
 Examples:
   php vendor/bin/pfm-guidelines init
   php vendor/bin/pfm-guidelines sync
+  php vendor/bin/pfm-guidelines sync --boost-update
   php vendor/bin/pfm-guidelines sync --no-interaction --layout=flat-numbered --mode=copy --presets=laravel,nuxt-ui --write-config
 
 TXT;
@@ -366,7 +405,7 @@ TXT;
      */
     private static function parseOptions(array $args): array
     {
-        $opts = ['preset' => []];
+        $opts = [];
 
         foreach ($args as $i => $iValue) {
             $arg = $iValue;
@@ -435,6 +474,64 @@ TXT;
         }
 
         return (bool) $value;
+    }
+
+    /**
+     * @param array<string, mixed> $opts
+     * @return array<int, string>
+     */
+    private static function validateOptions(array $opts): array
+    {
+        $errors = [];
+
+        foreach (self::REQUIRED_VALUE_OPTIONS as $requiredKey) {
+            if (!array_key_exists($requiredKey, $opts)) {
+                continue;
+            }
+
+            $requiredOption = '--' . str_replace('_', '-', $requiredKey);
+            $value = $opts[$requiredKey];
+
+            if ($requiredKey === 'preset') {
+                if (!is_array($value) || $value === []) {
+                    $errors[] = "Опция $requiredOption требует значение.";
+                    continue;
+                }
+
+                $hasEmptyPreset = false;
+                foreach ($value as $presetValue) {
+                    if (!is_string($presetValue) || trim($presetValue) === '') {
+                        $hasEmptyPreset = true;
+                        break;
+                    }
+                }
+
+                if ($hasEmptyPreset) {
+                    $errors[] = "Опция $requiredOption требует непустое значение.";
+                }
+
+                continue;
+            }
+
+            if (is_bool($value)) {
+                $errors[] = "Опция $requiredOption требует значение.";
+                continue;
+            }
+
+            if (is_string($value) && trim($value) === '') {
+                $errors[] = "Опция $requiredOption требует непустое значение.";
+            }
+        }
+
+        if (isset($opts['mode']) && is_string($opts['mode']) && !in_array($opts['mode'], ['symlink', 'copy'], true)) {
+            $errors[] = "Опция --mode поддерживает только значения: symlink, copy.";
+        }
+
+        if (isset($opts['layout']) && is_string($opts['layout']) && !in_array($opts['layout'], ['flat-numbered', 'folders'], true)) {
+            $errors[] = "Опция --layout поддерживает только значения: flat-numbered, folders.";
+        }
+
+        return $errors;
     }
 
     /**
@@ -533,5 +630,45 @@ TXT;
         }
 
         return @file_put_contents($path, $json) !== false;
+    }
+
+    private static function runBoostUpdate(string $artisan): int
+    {
+        $phpBinary = PHP_BINARY !== '' ? PHP_BINARY : 'php';
+        $command = escapeshellarg($phpBinary) . ' ' . escapeshellarg($artisan) . ' boost:update';
+
+        /** @var array<int, string> $output */
+        $output = [];
+        $exitCode = 0;
+        exec($command . ' 2>&1', $output, $exitCode);
+
+        if ($exitCode !== 0) {
+            warning("boost:update завершился с кодом $exitCode");
+            foreach (self::tailLines($output, 20) as $line) {
+                note($line);
+            }
+
+            return $exitCode;
+        }
+
+        info('boost:update выполнен успешно.');
+        foreach (self::tailLines($output, 5) as $line) {
+            note($line);
+        }
+
+        return 0;
+    }
+
+    /**
+     * @param array<int, string> $lines
+     * @return array<int, string>
+     */
+    private static function tailLines(array $lines, int $limit): array
+    {
+        if ($limit <= 0 || $lines === []) {
+            return [];
+        }
+
+        return array_slice($lines, -$limit);
     }
 }

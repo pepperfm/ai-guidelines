@@ -93,11 +93,17 @@ final class BuildBoostGuidelines
         }
 
         $outDir = dirname($out);
-        if (!is_dir($outDir)) {
-            mkdir($outDir, 0777, true);
+        if (!is_dir($outDir) && !mkdir($outDir, 0777, true) && !is_dir($outDir)) {
+            fwrite(STDERR, "[build-boost-guidelines] Failed to create output dir: {$outDir}\n");
+            return 2;
         }
 
-        file_put_contents($out, $compiled);
+        $writtenBytes = file_put_contents($out, $compiled);
+        if ($writtenBytes === false) {
+            fwrite(STDERR, "[build-boost-guidelines] Failed to write output file: {$out}\n");
+            return 2;
+        }
+
         fwrite(STDOUT, "[build-boost-guidelines] Wrote: {$this->rel($root, $out)}\n");
         return 0;
     }

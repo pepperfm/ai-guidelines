@@ -11,7 +11,7 @@ CLI умеет:
 
 - выбрать пресеты интерактивно (Laravel Prompts),
 - создать **symlink** или **copy** в `.ai/guidelines/...`,
-- (опционально) запустить `php artisan boost:update`, если проект Laravel.
+- (опционально) запустить `php artisan boost:update` через флаг `--boost-update`, если проект Laravel.
 
 ## Установка
 
@@ -68,15 +68,29 @@ vendor/bin/pfm-guidelines sync
 vendor/bin/pfm-guidelines sync --no-interaction --mode=copy --presets=laravel,nuxt-ui
 ```
 
+С автозапуском Boost обновления (если есть `artisan`):
+
+```bash
+vendor/bin/pfm-guidelines sync --boost-update
+```
+
 Доступные параметры:
 
 - `--presets=laravel,nuxt-ui`
+- `--preset=laravel` (можно указывать несколько раз)
 - `--mode=symlink|copy`
+- `--layout=flat-numbered|folders`
 - `--target=.ai/guidelines`
 - `--laravel-macros`
+- `--skills[=true|false]`
+- `--skills-target=.ai/skills`
+- `--write-config`
 - `--force` (перезаписывать существующие файлы)
 - `--dry-run` (ничего не менять, только показать действия)
+- `--no-interaction`
+- `--boost-update` (после успешного `sync` запустить `php artisan boost:update`, если `artisan` существует)
 - `--config=.pfm-guidelines.json` (путь к конфигу)
+- `-V`, `--version`
 
 ## Связка с Boost / Codex
 
@@ -95,3 +109,4 @@ Boost прочитает `.ai/guidelines/*` и пересоберёт `AGENTS.md
 - `pfm-guidelines sync` → применить конфиг/параметры, создать symlink/copy
 - `pfm-guidelines list` → показать доступные пресеты
 - `pfm-guidelines help` → справка
+- `pfm-guidelines -V` / `pfm-guidelines --version` → версия CLI

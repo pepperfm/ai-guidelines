@@ -1,7 +1,7 @@
 {{-- AUTO-GENERATED FILE. DO NOT EDIT DIRECTLY. --}}
 {{-- This file is generated from markdown sources in resources/boost/guidelines/**/*.md --}}
 {{-- Run: php scripts/build-boost-guidelines.php --}}
-{{-- Checksum: 2fc87e51d9e67899e8524ba9b10c4eb8cfb6e222 --}}
+{{-- Checksum: df980dfb2984f6162cbbf25a6c84812dfa237a3e --}}
 @verbatim
 <!-- BEGIN: _core/core.md -->
 
