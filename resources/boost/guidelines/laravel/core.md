@@ -1,6 +1,6 @@
 # Codex — Laravel/Sail Guidelines (Lite)
 
-**Версия:** 2026‑03‑24
+**Версия:** 2026‑03‑25
 
 Этот документ — **короткая версия** Laravel‑правил: только MUST/ограничения.
 Детальные примеры и разъяснения вынесены в `.ai/skills/**` (SKILLS), чтобы экономить контекст/токены.
@@ -13,7 +13,7 @@
 
 - `laravel-sail-and-tests` — запуск команд и тестов через Sail + правила таймаутов/вывода.
 - `laravel-php-style` — подробный PHP/Laravel стиль: strict_types, helpers, Arr::get, FQCN, импорты, контроллеры.
-- `laravel-macros` — гайд по Pepperfm\LaravelMacros (если используется).
+- `laravel-array-macros` — гайд по Pepperfm\LaravelMacros для `Arr::*` и soft-cast accessors (если используется).
 
 ---
 
@@ -25,8 +25,11 @@
 - Каждый PHP-файл начинается с `declare(strict_types=1);`.
 - Все публичные методы имеют явные return type'ы (для HTTP — конкретные типы ответа).
 - Для вендорных типов в сигнатурах — **inline FQCN** (не импортировать ради сокращения).
-- Для опциональных ключей массива — `Arr::get(...)`; если нужен soft-cast и подключён `pepperfm/macros-for-laravel` — `Arr::toString(...)` / `Arr::int(...)` / `Arr::bool(...)` (см. skill `laravel-macros`).
+- Для опциональных ключей массива — `Arr::get(...)`; если нужен soft-cast и подключён `pepperfm/macros-for-laravel` — `Arr::toString(...)` / `Arr::int(...)` / `Arr::bool(...)` (см. skill `laravel-array-macros`).
 - Helpers > Facades: если есть helper — используем helper.
+- Для `str()`: UUID как строку получаем через `str()->uuid()->toString()`, а обычную PHP-строку из fluent `Stringable` — через `->value()`.
+- Интерполяция строк допустима; простые `$var` и `$object->property` пишем без `{}`, более сложные выражения оставляем прямо в строке через `{...}` и не упрощаем их без причины во временные переменные или конкатенацию.
+- Импорты держим в стабильном порядке; если импортирован родительский класс (`extends BaseClass`), он идёт первым среди всех `use`-импортов файла.
 - Используем проектные хелперы: `user()`, `when()`, `valueOrDefault()`, `db()`.
 - Контроллеры тонкие, валидация — через `FormRequest`.
 - Не читать `env()` в рантайме — только `config()`.

@@ -1,7 +1,7 @@
 {{-- AUTO-GENERATED FILE. DO NOT EDIT DIRECTLY. --}}
 {{-- This file is generated from markdown sources in resources/boost/guidelines/**/*.md --}}
 {{-- Run: php scripts/build-boost-guidelines.php --}}
-{{-- Checksum: a0221322631a022cf343ab4e83345a90b5a24adb --}}
+{{-- Checksum: 390fa15309f77d0aa8bce20f36941fea9e32fc8c --}}
 @verbatim
 <!-- BEGIN: _core/core.md -->
 
@@ -97,7 +97,7 @@
 
 # Codex — Laravel/Sail Guidelines (Lite)
 
-**Версия:** 2026‑03‑24
+**Версия:** 2026‑03‑25
 
 Этот документ — **короткая версия** Laravel‑правил: только MUST/ограничения.
 Детальные примеры и разъяснения вынесены в `.ai/skills/**` (SKILLS), чтобы экономить контекст/токены.
@@ -110,7 +110,7 @@
 
 - `laravel-sail-and-tests` — запуск команд и тестов через Sail + правила таймаутов/вывода.
 - `laravel-php-style` — подробный PHP/Laravel стиль: strict_types, helpers, Arr::get, FQCN, импорты, контроллеры.
-- `laravel-macros` — гайд по Pepperfm\LaravelMacros (если используется).
+- `laravel-array-macros` — гайд по Pepperfm\LaravelMacros для `Arr::*` и soft-cast accessors (если используется).
 
 ---
 
@@ -122,8 +122,11 @@
 - Каждый PHP-файл начинается с `declare(strict_types=1);`.
 - Все публичные методы имеют явные return type'ы (для HTTP — конкретные типы ответа).
 - Для вендорных типов в сигнатурах — **inline FQCN** (не импортировать ради сокращения).
-- Для опциональных ключей массива — `Arr::get(...)`; если нужен soft-cast и подключён `pepperfm/macros-for-laravel` — `Arr::toString(...)` / `Arr::int(...)` / `Arr::bool(...)` (см. skill `laravel-macros`).
+- Для опциональных ключей массива — `Arr::get(...)`; если нужен soft-cast и подключён `pepperfm/macros-for-laravel` — `Arr::toString(...)` / `Arr::int(...)` / `Arr::bool(...)` (см. skill `laravel-array-macros`).
 - Helpers > Facades: если есть helper — используем helper.
+- Для `str()`: UUID как строку получаем через `str()->uuid()->toString()`, а обычную PHP-строку из fluent `Stringable` — через `->value()`.
+- Интерполяция строк допустима; простые `$var` и `$object->property` пишем без `{}`, более сложные выражения оставляем прямо в строке через `{...}` и не упрощаем их без причины во временные переменные или конкатенацию.
+- Импорты держим в стабильном порядке; если импортирован родительский класс (`extends BaseClass`), он идёт первым среди всех `use`-импортов файла.
 - Используем проектные хелперы: `user()`, `when()`, `valueOrDefault()`, `db()`.
 - Контроллеры тонкие, валидация — через `FormRequest`.
 - Не читать `env()` в рантайме — только `config()`.
@@ -164,20 +167,42 @@
 
 # Laravel Macros — Quick Pointer
 
-**Версия:** 2026‑01‑30
+**Версия:** 2026‑03‑24
 
 Этот файл намеренно короткий: **полный** гайд по `Pepperfm\LaravelMacros` вынесен в SKILLS, чтобы не раздувать контекст.
 
 ## Где лежит полный гайд
 
-- Skill: `laravel-macros`
-- Файл: `.ai/skills/laravel-macros/SKILL.md`
+- Skill: `laravel-array-macros`
+- Файл: `.ai/skills/laravel-array-macros/SKILL.md`
 
-## Когда подключать skill `laravel-macros`
+## Когда подключать skill `laravel-array-macros`
 
 - В задаче упоминаются `macros-for-laravel`, `MACROS_PROFILE`, `MACROS_ENABLED`.
-- Работаешь с фасадом `Arr`, или нужно приводить к типу получаемые из массива значения, по типу `(string) Arr::get(...)` -> `Arr::toString(...)` etc.
+- Работаешь с фасадом `Arr`, особенно если значение читается из массива **сразу как тип** (`int|bool|float|string|array|enum`).
 - Нужно объяснить/настроить профили, политики конфликтов (`conflicts`, `unreachable`) или добавить кастомную группу.
+
+## Короткий принцип
+
+- `Arr::get(...)` — доступ без приведения.
+- `Arr::int / bool / toFloat / toString / toArray / toEnum` — доступ **с soft-cast**.
+- Если выбран макрос, внешний код не должен повторять его работу кастами, `trim`, `??` или избыточными аргументами по умолчанию.
+
+Примеры:
+
+```php
+// Было
+(int) Arr::get($payload, 'timeout', 600);
+
+// Нужно
+Arr::int($payload, 'timeout', 600);
+
+// Было
+Arr::toString($payload, 'title', null);
+
+// Нужно
+Arr::toString($payload, 'title');
+```
 
 > Общие правила (Core) см. в target: `01-core.md` (layout `flat-numbered`) или `_core/core.md` (layout `folders`).
 

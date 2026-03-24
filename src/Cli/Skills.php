@@ -43,7 +43,7 @@ final class Skills
 
         // Optional skill: only if macros are enabled.
         if ($config->laravelMacros && in_array('laravel', $config->presets, true)) {
-            $skills[] = 'laravel-macros';
+            $skills[] = 'laravel-array-macros';
         }
 
         return array_values(array_unique($skills));

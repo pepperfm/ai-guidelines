@@ -1,11 +1,11 @@
 ---
-name: laravel-macros
-description: 'Pepperfm\LaravelMacros: профили, конфликты, добавление/использование макросов. Активируй, когда установлена библиотека pepperfm/macros-for-laravel, или включены MACROS_*.'
+name: laravel-array-macros
+description: 'Pepperfm\LaravelMacros для массивов: Arr::get, soft-cast macros, профили, конфликты, добавление/использование. Активируй, когда установлена библиотека pepperfm/macros-for-laravel, или включены MACROS_*.'
 ---
 
 # Laravel Macros — Гайд по использованию (Pepperfm\LaravelMacros)
 
-**Версия:** 2026‑02‑26
+**Версия:** 2026‑03‑24
 
 Этот документ описывает, как мы подключаем и используем библиотеку **Pepperfm\LaravelMacros**:
 профили групп, политики конфликтов и встроенные макросы. Формат и стиль совпадают с правилами для агента
@@ -18,6 +18,19 @@ description: 'Pepperfm\LaravelMacros: профили, конфликты, доб
 - В задаче упоминаются `MACROS_ENABLED`, `MACROS_PROFILE`, конфиг `config/macros-for-laravel.php`.
 - В коде встречаются вызовы макросов, которых нет в стандартном Laravel (например `Arr::bool(...)`, `collect(...)->filterNotNull()`).
 - Нужно изменить состав групп/профилей, либо политики `conflicts` / `unreachable`.
+
+## Главная идея этого skill
+
+Этот skill нужен не для справки о пакете, а для **правильной генерации кода**.
+
+Главный принцип:
+
+- если нужно **достать значение из массива и привести его к типу**, приведение должно жить **в accessor-е**, а не снаружи.
+
+То есть:
+- `Arr::get(...)` — только для простого доступа без приведения;
+- `Arr::int / bool / toFloat / toString / toArray / toEnum` — для доступа **с приведением**;
+- внешний код не должен дублировать работу accessor-а кастами, `trim`, `??`, или передачей аргументов, совпадающих с его дефолтами.
 
 > ## Precedence & Language (MUST)
 
@@ -128,14 +141,45 @@ MACROS_PROFILE=http
 Arr::bool($array, 'flag');
 Arr::int($array, 'count');
 Arr::toFloat($array, 'ratio');
-Arr::toString($array, 'name', null, true);
+Arr::toString($array, 'name', '', true);
 Arr::toArray($array, 'items');
-Arr::toEnum($array, 'status', Status::class, $default = null);
+Arr::toEnum($array, 'status', Status::class);
 ```
 
 Примечания:
 - Это **soft‑cast** (в отличие от strict методов Laravel 12).
 - Имена не конфликтуют с `Arr::float`, `Arr::string`, `Arr::array`.
+
+### 4.1.1 Дефолты сигнатур (критично для генерации)
+
+Используй эти дефолты как источник правды:
+
+```php
+Arr::bool($array, $key, $default = null, $smart = true)
+Arr::int($array, $key, $default = null)
+Arr::toFloat($array, $key, $default = null)
+Arr::toString($array, $key, $default = null, $trim = false)
+Arr::toArray($array, $key, array $default = [])
+Arr::toEnum($array, $key, $enumClass, $default = null)
+```
+
+Правило:
+- если передаваемый аргумент **совпадает с дефолтом метода**, его **не нужно писать явно**.
+
+Примеры:
+
+```php
+// Хорошо
+Arr::toString($payload, 'name');
+Arr::toArray($payload, 'items');
+Arr::toEnum($payload, 'status', Status::class);
+
+// Плохо: избыточно
+Arr::toString($payload, 'name', null);
+Arr::toString($payload, 'name', null, false);
+Arr::toArray($payload, 'items', []);
+Arr::toEnum($payload, 'status', Status::class, null);
+```
 
 ### 4.2 `CollectionFilterMacros` (Support)
 
@@ -184,11 +228,83 @@ final class MyGroup implements MacroGroupContract
 
 ---
 
-## 7) Практика в Pechka (MUST)
+## 7) Правила генерации кода (MUST)
+
+### 7.1 Общее правило выбора
+
+- Если нужен просто доступ к опциональному ключу без приведения типа, используй `Arr::get(...)`.
+- Если значение читается из массива **сразу как `int|bool|float|string|array|enum`**, используй соответствующий accessor-макрос.
+- Если нужен строгий Laravel 12 contract с fail-fast поведением, макросы не обязательны: там допустим нативный strict API Laravel.
+
+Короткая формула:
+
+```text
+access only -> Arr::get(...)
+access + soft cast -> Arr macro
+```
+
+### 7.2 Следствие из общего правила
+
+Если выбрали accessor-макрос, внешний код не должен повторять его работу.
+
+Из этого автоматически следует:
+- не писать `(int) Arr::get(...)`, `(bool) Arr::get(...)`, `(string) Arr::get(...)` там, где есть `Arr::int/bool/toString`;
+- не писать `trim((string) Arr::get(...))`, если это `Arr::toString(..., ..., ..., true)`;
+- не передавать в макрос `null`, `[]`, `false`, `true`, если это и так его дефолт;
+- не добавлять после макроса лишние `(int)`, `(bool)`, `?? ''`, `?? []`.
+
+### 7.3 Каноничный образ мысли
+
+Думай не так:
+
+```php
+$value = Arr::get(...);
+$value = (int) $value;
+```
+
+А так:
+
+```php
+$value = Arr::int(...);
+```
+
+Не так:
+
+```php
+$name = Arr::toString($payload, 'name', null);
+```
+
+А так:
+
+```php
+$name = Arr::toString($payload, 'name');
+```
+
+Не так:
+
+```php
+$title = trim((string) Arr::get($payload, 'title', ''));
+```
+
+А так:
+
+```php
+$title = Arr::toString($payload, 'title', '', true);
+```
+
+### 7.4 Практическое правило
+
+Передавай аргумент в макрос только если он **реально меняет его поведение**.
+
+Если аргумент равен встроенному дефолту метода, он должен быть опущен.
+
+---
+
+## 8) Практика в Pechka (MUST)
 
 Этот раздел обязателен для рефакторинга `Arr::get(...)` в этом проекте.
 
-### 7.1 Базовые правила
+### 8.1 Базовые правила
 
 - Если нужен тип (`int|bool|string|array|enum`) — используй макросы (`Arr::int`, `Arr::bool`, `Arr::toString`, `Arr::toArray`, `Arr::toEnum`) вместо `(type) Arr::get(...)`.
 - Не писать `Arr::get($x ?? [], 'key')`: `Arr::get` уже корректно работает с nullable входом; передавай `$x` напрямую.
@@ -197,8 +313,11 @@ final class MyGroup implements MacroGroupContract
     - `Arr::toString(..., '')` уже возвращает `string`, не нужен `?? ''` и `(string)`.
     - `Arr::int(..., 3)` уже возвращает `int`, не нужен `(int)`.
     - `Arr::bool(..., false)` уже возвращает `bool`, не нужен `(bool)`.
+    - `Arr::toString(..., ..., null)` не писать: `null` там уже дефолт.
+    - `Arr::toArray(..., ..., [])` не писать: `[]` там уже дефолт.
+    - `Arr::toEnum(..., ..., Enum::class, null)` не писать: `null` там уже дефолт.
 
-### 7.2 Каноничные замены
+### 8.2 Каноничные замены
 
 ```php
 // Было
@@ -214,15 +333,35 @@ Arr::bool($payload, 'enabled', false);
 // Было
 trim((string) Arr::get($tokens, 1, ''));
 // Стало
-trim(Arr::toString($tokens, 1, ''));
+Arr::toString($tokens, 1, '', true);
 
 // Было
 Arr::get($operation->payload ?? [], 'domains');
 // Стало
 Arr::get($operation->payload, 'domains');
+
+// Было
+Arr::toString($payload, 'title', null);
+// Стало
+Arr::toString($payload, 'title');
+
+// Было
+Arr::toArray($payload, 'items', []);
+// Стало
+Arr::toArray($payload, 'items');
 ```
 
-### 7.3 Тесты (критично)
+### 8.3 Self-check перед финалом
+
+Перед завершением задачи проверь:
+
+- нет ли `(type) Arr::get(...)` там, где нужен soft-cast и макрос доступен;
+- нет ли у макроса аргументов `null`, `[]`, `false`, `true`, которые совпадают с его дефолтами;
+- нет ли после макроса лишнего `(int)`, `(bool)`, `?? ''`, `?? []`;
+- не написано ли `trim(Arr::toString(...))` вместо `Arr::toString(..., ..., ..., true)`;
+- не используется ли `Arr::get($x ?? [], ...)` вместо `Arr::get($x, ...)`.
+
+### 8.4 Тесты (критично)
 
 - Если тест вызывает код с `Arr::*` макросами, тест должен бутстрапить Laravel-контейнер:
     - добавить `uses(Tests\TestCase::class);` в такой unit/feature test-файл.
