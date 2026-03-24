@@ -1,7 +1,7 @@
 {{-- AUTO-GENERATED FILE. DO NOT EDIT DIRECTLY. --}}
 {{-- This file is generated from markdown sources in resources/boost/guidelines/**/*.md --}}
 {{-- Run: php scripts/build-boost-guidelines.php --}}
-{{-- Checksum: 7a7fbcea2540fa973ca38b4ddf8f336644b3e802 --}}
+{{-- Checksum: ce757e3c60291c8996187277676092d12ca615ec --}}
 @verbatim
 <!-- BEGIN: _core/core.md -->
 
@@ -122,7 +122,7 @@
 - Каждый PHP-файл начинается с `declare(strict_types=1);`.
 - Все публичные методы имеют явные return type'ы (для HTTP — конкретные типы ответа).
 - Для вендорных типов в сигнатурах — **inline FQCN** (не импортировать ради сокращения).
-- Для опциональных ключей массива — `Arr::get(...)`; если нужен soft-cast и подключён `pepperfm/macros-for-laravel` — `Arr::toString(...)` / `Arr::int(...)` / `Arr::bool(...)` (см. skill `laravel-array-macros`).
+- Для данных: guaranteed key -> прямой доступ, optional array key -> `Arr::get(...)`, mixed/object path -> `data_get(...)`; не пишем `$payload['x'] ?? null` как замену helper-у.
 - Helpers > Facades: если есть helper — используем helper.
 - Для `str()`: UUID как строку получаем через `str()->uuid()->toString()`, а обычную PHP-строку из fluent `Stringable` — через `->value()`.
 - Интерполяция строк допустима; простые `$var` и `$object->property` пишем без `{}`, более сложные выражения оставляем прямо в строке через `{...}` и не упрощаем их без причины во временные переменные или конкатенацию.
