@@ -1,7 +1,7 @@
 {{-- AUTO-GENERATED FILE. DO NOT EDIT DIRECTLY. --}}
 {{-- This file is generated from markdown sources in resources/boost/guidelines/**/*.md --}}
 {{-- Run: php scripts/build-boost-guidelines.php --}}
-{{-- Checksum: ce757e3c60291c8996187277676092d12ca615ec --}}
+{{-- Checksum: 74cd433fb5fac27cc3900d3baa19982bc7289478 --}}
 @verbatim
 <!-- BEGIN: _core/core.md -->
 
@@ -128,6 +128,10 @@
 - Интерполяция строк допустима; простые `$var` и `$object->property` пишем без `{}`, более сложные выражения оставляем прямо в строке через `{...}` и не упрощаем их без причины во временные переменные или конкатенацию.
 - Для "пусто / заполнено" по умолчанию предпочитаем `blank()` / `filled()`, `=== null` оставляем для проверки именно `null`, а `empty()` в основном для явной проверки пустого массива.
 - `Collection` сохраняем для fluent-обработки; в `array` переходим только на границе контракта, native PHP или внешнего payload.
+- В Eloquent по умолчанию предпочитаем `exists()/doesntExist()`, `value()`, `firstWhere()`, `findOrFail()/firstOrFail()` и `pluck(...)->all()`.
+- В контроллерах helper-first и sugar-first: `response()->json(...)`, `to_route(...)`, `back()`; доменный слой по умолчанию кидает исключения, а не строит HTTP response.
+- Не вводим временные переменные и лишние локальные рефакторы без пользы; request-like DI объект по умолчанию называется `$request`.
+- Обычный `Request` и inline `$request->validate(...)` допустимы для простых кейсов; если входной слой растёт, default move — в `FormRequest`; если нужен тип — используем typed request methods.
 - Для исключений имя переменной всегда `$e`; не логируем/не `report(...)` исключение перед пробросом без новой полезной информации.
 - Импорты держим в стабильном порядке; если импортирован родительский класс (`extends BaseClass`), он идёт первым среди всех `use`-импортов файла.
 - Используем проектные хелперы: `user()`, `when()`, `valueOrDefault()`, `db()`.

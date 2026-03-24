@@ -433,6 +433,42 @@ $items = collect($payload)->all();
 - Транзакции: `db()->transaction(fn () => ...)` либо `begin/commit/rollBack`.
 - Сложные запросы — вне контроллеров (сервисы/репозитории) → тестируемость.
 
+### 14.1 Паттерны доступа к данным
+
+Предпочтения по умолчанию:
+
+- наличие записей -> `->exists()`
+- отсутствие записей -> `->doesntExist()`
+- один scalar из запроса -> `->value(...)`
+- одна nullable-модель -> `->first()` / `->find()`
+- одна обязательная модель -> `->firstOrFail()` / `->findOrFail()`
+- одна запись по условию -> `->firstWhere(...)`
+- список значений с переходом в массив -> `->pluck(...)->all()`
+
+✅ Предпочтительно:
+```php
+if (User::query()->where('email', $email)->doesntExist()) {
+    // ...
+}
+
+$email = User::query()->whereKey($id)->value('email');
+
+$user = User::query()->firstWhere('email', $email);
+
+$post = Post::query()->findOrFail($id);
+
+$ids = User::query()->pluck('id')->all();
+```
+
+### 14.2 Что лучше по умолчанию
+
+- `->exists()` лучше, чем `->count() > 0`
+- `->doesntExist()` лучше, чем `! ->exists()`
+- `->value('field')` предпочтительнее, чем `->pluck('field')->first()`
+- `->firstWhere(...)` предпочтительнее, чем `->where(...)->first()`, когда условие простое и одношаговое
+
+Альтернативы не запрещены жёстко, но default должен быть именно таким.
+
 ---
 
 ## 15) Ошибки и логирование
@@ -504,7 +540,303 @@ try {
 
 ---
 
-## 16) Порядок импортов (`use`)
+## 16) HTTP responses / redirects / aborts
+
+Главный принцип:
+- в контроллере по умолчанию возвращаем **готовый HTTP response** через helper;
+- в доменном слое по умолчанию бросаем исключения, а не строим HTTP-ответы;
+- sugar-helpers (`to_route()`, `back()`) в приоритете, если они выражают намерение короче.
+
+### 16.1 Что предпочитать
+
+✅ Предпочтительно:
+```php
+return response()->json($data);
+return to_route('users.index');
+return back();
+return inertia('Users/Index', $props);
+return view('users.index', $data);
+```
+
+### 16.2 Что считать default
+
+- JSON -> `response()->json(...)`
+- redirect to route -> `to_route(...)`
+- redirect back -> `back()`
+- простое короткое HTTP guard-condition -> `abort_if(...)` / `abort_unless(...)`
+
+### 16.3 Контроллер vs домен
+
+- контроллер -> возвращает HTTP response/helper result;
+- domain/service/action -> может бросать исключения;
+- не тащить HTTP-детали внутрь доменного кода без причины.
+
+✅ Нормально:
+```php
+if ($user->cannot('view', $post)) {
+    return response()->json(['message' => 'Forbidden'], 403);
+}
+```
+
+```php
+if ($post->isArchived()) {
+    throw new DomainException('Post is archived.');
+}
+```
+
+### 16.4 Return types
+
+- если тип ответа ясен, предпочитай конкретный return type;
+- union return type допустим, если метод реально может вернуть несколько корректных HTTP-типов.
+
+Примеры:
+```php
+public function index(): \Inertia\Response
+public function store(): \Illuminate\Http\RedirectResponse
+public function show(): \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
+```
+
+### 16.5 Чего избегать
+
+- не использовать `new JsonResponse(...)` как default, если достаточно `response()->json(...)`;
+- не писать `redirect()->route(...)`, если достаточно `to_route(...)`;
+- не писать `redirect()->back()`, если достаточно `back()`;
+- не выбрасывать HTTP-oriented response logic в domain layer без причины.
+
+---
+
+## 17) Naming / temp variables / needless refactors
+
+Главный принцип:
+- не вводи временную переменную без реальной пользы;
+- не дроби локально ясный код на большее число строк без выигрыша в читаемости;
+- имена должны быть достаточно конкретными для текущего контекста, но без искусственного переусложнения.
+
+### 17.1 Когда не нужна временная переменная
+
+Если значение используется один раз и выражение остаётся читаемым, не выноси его в отдельную переменную.
+
+✅ Предпочтительно:
+```php
+return $users->pluck('email')->filter()->values()->all();
+
+if (blank($title)) {
+    return;
+}
+```
+
+❌ Не по умолчанию:
+```php
+$emails = $users->pluck('email')->filter()->values()->all();
+
+return $emails;
+```
+
+```php
+$isBlankTitle = blank($title);
+
+if ($isBlankTitle) {
+    return;
+}
+```
+
+### 17.2 Когда имя достаточно хорошее
+
+Имена вроде `$result`, `$data`, `$item`, `$items`, `$payload` допустимы, если:
+- кейс простой;
+- переменных мало;
+- нет двусмысленности;
+- из ближайшего контекста сразу понятно, что именно лежит в переменной.
+
+Если контекст уже сложнее, имя должно стать конкретнее.
+
+✅ Нормально:
+```php
+$user
+$post
+$name
+$payload
+$items
+```
+
+❌ Слишком абстрактно в сложном контексте:
+```php
+$result
+$data
+```
+
+если реально речь о конкретной сущности вроде `user profile slug`, `invoice payload`, `sync result`.
+
+### 17.3 Что считать хорошим refactor style
+
+- если выражение длинное, но всё ещё локально читается, оставляем его;
+- если разбиение реально улучшает понимание, тогда выносим;
+- не рефакторить код только ради "воздуха" или большего количества переменных.
+
+Это рекомендация, а не жёсткий запрет.
+
+### 17.4 Request naming
+
+Если объект приходит через DI и играет роль request-like объекта, переменная по умолчанию называется `$request`, независимо от того, это `FormRequest` или data-like request object.
+
+✅ Нормально:
+```php
+public function store(StoreUserRequest $request): \Illuminate\Http\RedirectResponse
+public function update(UpdateUserData $request): \Illuminate\Http\JsonResponse
+```
+
+### 17.5 Что предпочитать
+
+- не вводить переменную только ради следующего `return`;
+- не вводить переменную только ради следующего `if`, если условие и так читаемо;
+- bool-переменные называть по смыслу (`is...`, `has...`, `can...`, `should...`) там, где это помогает, но без жёсткой схемы.
+
+---
+
+## 18) Request / validation / FormRequest / data objects
+
+Главный принцип:
+- request-layer может быть и обычным `Request`, и `FormRequest`, и data-like object;
+- если объект пришёл через DI как входной request-contract, переменная по умолчанию называется `$request`;
+- не усложнять входной слой без причины, но если логика растёт, default move — в `FormRequest`.
+
+### 18.1 Что допустимо
+
+✅ Нормально:
+```php
+public function store(Request $request): \Illuminate\Http\RedirectResponse
+{
+    $validated = $request->validate([
+        'email' => ['required', 'email'],
+        'name' => ['required', 'string'],
+    ]);
+
+    // ...
+}
+```
+
+```php
+public function update(UpdateUserRequest $request): \Illuminate\Http\JsonResponse
+{
+    // ...
+}
+```
+
+```php
+public function sync(UpdateUserData $request): \Illuminate\Http\JsonResponse
+{
+    // data-like request object, but variable is still $request
+}
+```
+
+### 18.2 Когда что предпочитать
+
+- простой вход -> обычный `Request` допустим;
+- немного простых правил -> inline `$request->validate(...)` допустим;
+- если слой растёт -> default move в `FormRequest`;
+- если нужен типизированный доступ -> используй typed method;
+- если специальный тип не нужен -> `$request->input()` достаточно.
+
+Примеры:
+```php
+$email = $request->string('email')->value();
+$isActive = $request->boolean('is_active');
+$page = $request->integer('page');
+
+$search = $request->input('search');
+```
+
+### 18.3 Naming
+
+- request-like DI объект остаётся `$request`, даже если это не `FormRequest`, а data object;
+- не переименовывать его в `$data`, `$dto`, `$payload`, если он играет роль входного request-контракта.
+
+### 18.4 Чего не навязываем
+
+- не запрещаем обычный `Request` автоматически;
+- не запрещаем inline validation автоматически;
+- не требуем всегда тащить `validated()` или всегда тащить typed request methods;
+- выбираем по размеру и сложности входного слоя.
+
+---
+
+## 19) Enums
+
+Главный принцип:
+- для фиксированных перечислений почти всегда используем enum;
+- строковые литералы для status/type/mode/role/state в прикладном коде по умолчанию не держим, если уже есть enum;
+- внутри домена работаем с самим enum, а не со строковым `->value`.
+
+### 19.1 Что предпочитать
+
+✅ Предпочтительно:
+```php
+if ($status === Status::Draft) {
+    // ...
+}
+
+return match ($status) {
+    Status::Draft => 'draft',
+    Status::Published => 'published',
+};
+```
+
+```php
+enum Status: string
+{
+    case Draft = 'draft';
+    case Published = 'published';
+
+    public function getLabel(): string
+    {
+        return match ($this) {
+            self::Draft => 'Draft',
+            self::Published => 'Published',
+        };
+    }
+}
+```
+
+### 19.2 `->value`
+
+- `->value` используем на границе: массив, json, payload, внешний API, база, response serialization;
+- внутри доменной логики не дергаем `->value` без необходимости.
+
+✅ Нормально:
+```php
+$payload['status'] = $status->value;
+```
+
+❌ Не по умолчанию:
+```php
+if ($status->value === 'draft') {
+    // ...
+}
+```
+
+### 19.3 Получение enum из входных данных
+
+Если подключён `pepperfm/macros-for-laravel`, предпочитай `Arr::toEnum(...)`:
+
+```php
+$status = Arr::toEnum($payload, 'status', Status::class);
+```
+
+Это предпочтительнее ручного `Status::tryFrom(...)` в прикладном коде, когда уже читаем значение из массива через `Arr::*`.
+
+### 19.4 Labels и display-logic
+
+- для человекочитаемых названий предпочитаем методы на enum, например `getLabel()`;
+- не размазывать label-mapping строками и `match` по всему приложению без причины.
+
+### 19.5 Нормальная форма
+
+- `array<Status>` и `Collection<Status>` нормальны;
+- не нужно преждевременно сводить enum-коллекции к scalar values, если доменная логика ещё продолжается.
+
+---
+
+## 20) Порядок импортов (`use`)
 
 Группы и порядок:
 1. **Laravel**: `Illuminate\*`, `Laravel\*` (и при необходимости `Symfony\*`, относимый к экосистеме фреймворка).
