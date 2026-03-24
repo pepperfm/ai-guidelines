@@ -303,7 +303,122 @@ $title = $post?->author?->profile?->display_name;
 
 ---
 
-## 11) Config / env / окружения
+## 11) Проверки `filled()/blank()/null/empty`
+
+Главный принцип:
+- по умолчанию ориентируемся на Laravel-semantics через `filled()` / `blank()`;
+- `=== null` / `!== null` используем только когда хотим проверить именно `null`, а не "пустоту";
+- `empty()` не используем по умолчанию, потому что она слишком широкая по смыслу;
+- `empty()` допустим в первую очередь там, где мы **явно** проверяем пустой массив и это самый прямой способ выразить намерение.
+
+### 11.1 Что предпочитать
+
+✅ Предпочтительно:
+```php
+if (blank($title)) {
+    return;
+}
+
+if (filled($payloadName)) {
+    // ...
+}
+
+if ($user === null) {
+    // ...
+}
+
+if (empty($items)) {
+    // array is empty
+}
+```
+
+### 11.2 Чего избегать
+
+❌ Не по умолчанию:
+```php
+if (empty($title)) {
+    // ...
+}
+
+if (isset($name) && $name !== '') {
+    // ...
+}
+
+if (trim($value) === '') {
+    // ...
+}
+```
+
+### 11.3 Как думать
+
+- если смысл "значение заполнено / пусто" — `filled()` / `blank()`;
+- если смысл "значение равно null / не равно null" — строгое сравнение;
+- если смысл "этот массив пуст" — `empty($items)` допустим и читаем;
+- не пытайся угадывать специальную семантику `0`, `'0'`, `false`, `[]` вручную, если это уже лучше выражается через `blank()` / `filled()`.
+
+---
+
+## 12) `Collection` vs `array`
+
+Главный принцип:
+- не прыгай между `Collection` и `array` без причины;
+- если уже работаешь fluent-цепочкой Laravel, обычно оставляй `Collection`;
+- в `array` переходи на границе, где это действительно нужно: контракт метода, чистая PHP-функция, сериализация, внешний API, strict return type.
+
+### 12.1 Что предпочитать
+
+✅ Предпочтительно:
+```php
+$emails = $users->pluck('email')->filter()->values();
+
+$names = collect($payload)
+    ->pluck('name')
+    ->filter()
+    ->values();
+
+return $names->all(); // only if method contract is array
+```
+
+### 12.2 Когда переходить в `array`
+
+- метод должен вернуть `array`;
+- дальше идут нативные PHP-функции, которым реально нужен массив;
+- строим payload для JSON / внешнего клиента / low-level API;
+- дальше уже не нужна fluent collection semantics.
+
+✅ Нормально:
+```php
+$names = $users->pluck('name')->filter()->values()->all();
+
+sort($names);
+
+return $names;
+```
+
+### 12.3 Чего избегать
+
+❌ Не по умолчанию:
+```php
+$names = $users->pluck('name')->all();
+$names = collect($names)->filter()->values();
+```
+
+```php
+$items = collect($payload)->all();
+```
+
+если после этого всё равно продолжается collection-style обработка.
+
+### 12.4 Как думать
+
+- fluent transformations -> `Collection`;
+- boundary / contract / native PHP -> `array`;
+- один осмысленный переход `Collection -> array` нормален;
+- лишние прыжки `Collection -> array -> Collection` считаются шумом.
+
+---
+
+## 13) Config / env / окружения
 
 - Не читать `env()` в рантайме. Только `config()`.
 - Для ветвления по окружению: `app()->isLocal()`, `app()->environment('testing')`, `...('production')`, и т.п.
@@ -311,7 +426,7 @@ $title = $post?->author?->profile?->display_name;
 
 ---
 
-## 12) Доступ к БД
+## 14) Доступ к БД
 
 - По умолчанию — **Eloquent**.
 - Если нужны ручные запросы/транзакции — `db()` helper, не `DB::` фасад.
@@ -320,18 +435,76 @@ $title = $post?->author?->profile?->display_name;
 
 ---
 
-## 13) Ошибки и логирование
+## 15) Ошибки и логирование
 
-- Предпочитай фреймворковые механизмы: `abort(404)` / `abort_if(...)`.
-- Логирование — через `logger()` **с контекстом**:
+- Предпочитай фреймворковые механизмы: `abort_if(...)`, `abort_unless(...)`, `throw_if(...)`, `throw_unless(...)` там, где условие короче и читабельнее обычного `if`.
+- Если обычный `if (...) { throw ... }` читается лучше, не надо насильно переписывать его в helper.
+- Для исключений имя переменной всегда `$e`. Это жёсткое правило.
 
+### 15.1 Логи
+
+Логи можно писать и строкой, и строкой с context array.
+
+✅ Допустимо:
 ```php
-logger()->warning('Unexpected state', ['id' => $id]);
+logger()->info('Import started');
+logger()->warning("User $userId not found");
+logger()->error('Webhook failed', ['payload_id' => $payloadId]);
 ```
+
+Правило:
+- если строка уже выражает смысл и допконтекст не нужен, строкового лога достаточно;
+- context array добавляем, когда он реально помогает разбору.
+
+### 15.2 Исключения
+
+✅ Допустимо:
+```php
+try {
+    // ...
+} catch (\Throwable $e) {
+    report($e);
+
+    throw $e;
+}
+```
+
+Но главное правило:
+- не логировать и не `report(...)` исключение перед пробросом **без новой полезной информации**;
+- если exception и так будет проброшен и обработан глобально, не создавай дублирующий шум.
+
+❌ Не нужно без причины:
+```php
+try {
+    // ...
+} catch (\Throwable $e) {
+    logger()->error($e->getMessage());
+
+    throw $e;
+}
+```
+
+✅ Нормально, если добавляешь смысл:
+```php
+try {
+    // ...
+} catch (\Throwable $e) {
+    report($e);
+    logger()->warning('Invoice sync failed', ['invoice_id' => $invoiceId]);
+
+    throw $e;
+}
+```
+
+### 15.3 Выбор формы условия
+
+- короткое guard-условие -> helper (`abort_if`, `throw_if`) нормален;
+- более сложное условие -> обычный `if` нормален;
+- не переписывать одно в другое без выигрыша в читаемости.
 
 ---
 
-## 14) Порядок импортов (`use`)
+## 16) Порядок импортов (`use`)
 
 Группы и порядок:
 1. **Laravel**: `Illuminate\*`, `Laravel\*` (и при необходимости `Symfony\*`, относимый к экосистеме фреймворка).

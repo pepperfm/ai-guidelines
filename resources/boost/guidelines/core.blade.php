@@ -1,7 +1,7 @@
 {{-- AUTO-GENERATED FILE. DO NOT EDIT DIRECTLY. --}}
 {{-- This file is generated from markdown sources in resources/boost/guidelines/**/*.md --}}
 {{-- Run: php scripts/build-boost-guidelines.php --}}
-{{-- Checksum: 390fa15309f77d0aa8bce20f36941fea9e32fc8c --}}
+{{-- Checksum: 7a7fbcea2540fa973ca38b4ddf8f336644b3e802 --}}
 @verbatim
 <!-- BEGIN: _core/core.md -->
 
@@ -126,6 +126,9 @@
 - Helpers > Facades: если есть helper — используем helper.
 - Для `str()`: UUID как строку получаем через `str()->uuid()->toString()`, а обычную PHP-строку из fluent `Stringable` — через `->value()`.
 - Интерполяция строк допустима; простые `$var` и `$object->property` пишем без `{}`, более сложные выражения оставляем прямо в строке через `{...}` и не упрощаем их без причины во временные переменные или конкатенацию.
+- Для "пусто / заполнено" по умолчанию предпочитаем `blank()` / `filled()`, `=== null` оставляем для проверки именно `null`, а `empty()` в основном для явной проверки пустого массива.
+- `Collection` сохраняем для fluent-обработки; в `array` переходим только на границе контракта, native PHP или внешнего payload.
+- Для исключений имя переменной всегда `$e`; не логируем/не `report(...)` исключение перед пробросом без новой полезной информации.
 - Импорты держим в стабильном порядке; если импортирован родительский класс (`extends BaseClass`), он идёт первым среди всех `use`-импортов файла.
 - Используем проектные хелперы: `user()`, `when()`, `valueOrDefault()`, `db()`.
 - Контроллеры тонкие, валидация — через `FormRequest`.
