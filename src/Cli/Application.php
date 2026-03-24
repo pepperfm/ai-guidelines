@@ -185,7 +185,7 @@ final class Application
                 error("Не удалось записать конфиг: $configPath");
                 return 1;
             }
-            info("Конфиг сохранён: $configPath");
+            info(($opts['dry_run'] ?? false ? 'Конфиг будет записан' : 'Конфиг сохранён') . ": $configPath");
         }
 
         return self::doSync($projectRoot, $configPath, $config, $opts);
@@ -251,8 +251,13 @@ final class Application
                 skillsTarget: $skillsTarget ?? '.ai/skills',
             );
 
-            if ($writeConfig && self::writeConfig($configPath, $config, (bool) ($opts['dry_run'] ?? false))) {
-                info("Конфиг сохранён: $configPath");
+            if ($writeConfig) {
+                if (!self::writeConfig($configPath, $config, (bool) ($opts['dry_run'] ?? false))) {
+                    error("Не удалось записать конфиг: $configPath");
+                    return 1;
+                }
+
+                info(($opts['dry_run'] ?? false ? 'Конфиг будет записан' : 'Конфиг сохранён') . ": $configPath");
             }
         } else {
             if ($presetsFromFlags !== []) {
@@ -277,8 +282,13 @@ final class Application
                 $config->skillsTarget = $skillsTarget;
             }
 
-            if ($writeConfig && self::writeConfig($configPath, $config, (bool) ($opts['dry_run'] ?? false))) {
-                info("Конфиг обновлён: $configPath");
+            if ($writeConfig) {
+                if (!self::writeConfig($configPath, $config, (bool) ($opts['dry_run'] ?? false))) {
+                    error("Не удалось записать конфиг: $configPath");
+                    return 1;
+                }
+
+                info(($opts['dry_run'] ?? false ? 'Конфиг будет обновлён' : 'Конфиг обновлён') . ": $configPath");
             }
         }
 
@@ -326,13 +336,12 @@ final class Application
         $boostUpdate = (bool) ($opts['boost_update'] ?? false);
 
         if ($dryRun && $boostUpdate) {
-            info('[dry-run] skip php artisan boost:update');
+            info('[dry-run] skip boost:update');
         } elseif ($boostUpdate) {
             if (!is_file($artisan)) {
                 warning('Флаг --boost-update проигнорирован: файл artisan не найден.');
             } else {
-                info('Запуск php artisan boost:update ...');
-                $boostUpdateExitCode = self::runBoostUpdate($artisan);
+                $boostUpdateExitCode = self::runBoostUpdate($projectRoot, $artisan);
                 if ($boostUpdateExitCode !== 0) {
                     outro('Готово, но boost:update завершился с ошибкой.');
                     return 1;
@@ -624,18 +633,28 @@ TXT;
         }
         $json .= "\n";
 
+        $dir = dirname($path);
+        if (!is_dir($dir)) {
+            if ($dryRun) {
+                return true;
+            }
+            if (@mkdir($dir, 0777, true) === false && !is_dir($dir)) {
+                return false;
+            }
+        }
+
         if ($dryRun) {
-            info("[dry-run] write config: $path");
             return true;
         }
 
         return @file_put_contents($path, $json) !== false;
     }
 
-    private static function runBoostUpdate(string $artisan): int
+    private static function runBoostUpdate(string $projectRoot, string $artisan): int
     {
-        $phpBinary = PHP_BINARY !== '' ? PHP_BINARY : 'php';
-        $command = escapeshellarg($phpBinary) . ' ' . escapeshellarg($artisan) . ' boost:update';
+        [$command, $label] = self::boostUpdateCommand($projectRoot, $artisan);
+
+        info("Запуск $label ...");
 
         /** @var array<int, string> $output */
         $output = [];
@@ -670,5 +689,26 @@ TXT;
         }
 
         return array_slice($lines, -$limit);
+    }
+
+    /**
+     * @return array{0: string, 1: string}
+     */
+    private static function boostUpdateCommand(string $projectRoot, string $artisan): array
+    {
+        $sail = $projectRoot . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'sail';
+        if (is_file($sail) && is_executable($sail)) {
+            return [
+                escapeshellarg($sail) . ' artisan boost:update',
+                './vendor/bin/sail artisan boost:update',
+            ];
+        }
+
+        $phpBinary = PHP_BINARY !== '' ? PHP_BINARY : 'php';
+
+        return [
+            escapeshellarg($phpBinary) . ' ' . escapeshellarg($artisan) . ' boost:update',
+            'php artisan boost:update',
+        ];
     }
 }

@@ -1,7 +1,7 @@
 {{-- AUTO-GENERATED FILE. DO NOT EDIT DIRECTLY. --}}
 {{-- This file is generated from markdown sources in resources/boost/guidelines/**/*.md --}}
 {{-- Run: php scripts/build-boost-guidelines.php --}}
-{{-- Checksum: df980dfb2984f6162cbbf25a6c84812dfa237a3e --}}
+{{-- Checksum: a0221322631a022cf343ab4e83345a90b5a24adb --}}
 @verbatim
 <!-- BEGIN: _core/core.md -->
 
@@ -97,7 +97,7 @@
 
 # Codex — Laravel/Sail Guidelines (Lite)
 
-**Версия:** 2026‑01‑30
+**Версия:** 2026‑03‑24
 
 Этот документ — **короткая версия** Laravel‑правил: только MUST/ограничения.
 Детальные примеры и разъяснения вынесены в `.ai/skills/**` (SKILLS), чтобы экономить контекст/токены.
@@ -117,6 +117,7 @@
 ## 2) MUST
 
 - Все команды запускаются через **Laravel Sail** (`./vendor/bin/sail ...`).
+- Если в проекте доступен Laravel Boost MCP / Docs API, сначала используем его как источник правды по Laravel ecosystem, а не «память» модели.
 - Нельзя утверждать, что команда была выполнена, если нет подтверждённого вывода.
 - Каждый PHP-файл начинается с `declare(strict_types=1);`.
 - Все публичные методы имеют явные return type'ы (для HTTP — конкретные типы ответа).

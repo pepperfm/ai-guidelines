@@ -88,7 +88,7 @@ vendor/bin/pfm-guidelines sync --boost-update
 - `--force` (перезаписывать существующие файлы)
 - `--dry-run` (ничего не менять, только показать действия)
 - `--no-interaction`
-- `--boost-update` (после успешного `sync` запустить `php artisan boost:update`, если `artisan` существует)
+- `--boost-update` (после успешного `sync` запустить `./vendor/bin/sail artisan boost:update`, если есть Sail; иначе `php artisan boost:update`)
 - `--config=.pfm-guidelines.json` (путь к конфигу)
 - `-V`, `--version`
 
@@ -100,7 +100,13 @@ vendor/bin/pfm-guidelines sync --boost-update
 php artisan boost:update
 ```
 
-Boost прочитает `.ai/guidelines/*` и пересоберёт `AGENTS.md` и другие файлы.
+Если в проекте есть **Laravel Sail**, безопаснее выполнять через:
+
+```bash
+./vendor/bin/sail artisan boost:update
+```
+
+Boost прочитает `.ai/guidelines/*` и пересоберёт `AGENTS.md` и другие файлы. Для пакетов третьих сторон актуальный контракт по-прежнему опирается на `resources/boost/guidelines/core.blade.php` и `resources/boost/skills/*/SKILL.md`.
 
 ## Команды
 
