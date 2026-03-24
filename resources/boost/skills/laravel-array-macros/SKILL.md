@@ -1,6 +1,7 @@
 ---
 name: laravel-array-macros
 description: 'Pepperfm\LaravelMacros для массивов: Arr::get, soft-cast macros, профили, конфликты, добавление/использование. Активируй, когда установлена библиотека pepperfm/macros-for-laravel, или включены MACROS_*.'
+compatibility: 'Laravel project. These rules apply when pepperfm/macros-for-laravel is installed, enabled, or intentionally being introduced.'
 ---
 
 # Laravel Macros — Гайд по использованию (Pepperfm\LaravelMacros)
