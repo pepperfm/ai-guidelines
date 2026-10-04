@@ -1,33 +1,38 @@
-# Project Overview — CLI‑пакет Composer для установки личных AI‑гайдлайнов (Codex/Boost) в проекты, создающий symlink или copy в `.ai/guidelines`.
-Интерактивный `init` помогает выбрать пресеты, режим и путь установки, а затем синхронизирует файлы; поведение можно закрепить в `.pfm-guidelines.json`.
-Пакет поставляется как исполняемый скрипт `pfm-guidelines` и предназначен для использования в PHP/Laravel‑проектах.
+# Project Overview
 
-## Tech Stack — какие языки, фреймворки, БД и т.п.
+`pepperfm/ai-guidelines` is a Composer package that provides shared AI guidelines/skills for Laravel Boost and an optional CLI for publishing project-local `.ai/guidelines` files.
 
-- PHP 8.3 (Composer library)
-- `laravel/prompts` ^0.3 для интерактивных CLI‑промптов
-- Без БД и веб‑фреймворка; чистый CLI
+## Tech Stack
 
-## Main Features — список ключевых фич с отсылкой к основным файлам/директориям
+- PHP 8.3+
+- `laravel/prompts` for CLI interaction
+- no database or web runtime
 
-- CLI команды `init`, `sync`, `list`, парсинг опций и интерактивные промпты — `src/Cli/Application.php`
-- Установка пресетов через symlink/copy, dry‑run, force и обработка ошибок — `src/Cli/Installer.php`
-- Конфиг `.pfm-guidelines.json` (чтение/запись, версия) — `src/Cli/Config.php`
-- Реестр пресетов и имена файлов для flat‑раскладки — `src/Cli/Presets.php`
-- Содержимое пресетов (гайдлайны) — `resources/boost/guidelines/*/core.md`, опциональный `resources/boost/guidelines/laravel/macros.md`
-- Skills (для агента, устанавливаются в `.ai/skills`) — `resources/boost/skills/*/SKILL.md`
+## Architecture
 
-## Architecture / Structure — кратко про слои/каталоги проекта
+- `resources/guidelines/` — authored guideline sources used by the CLI and build script.
+- `resources/boost/guidelines/core.blade.php` — generated Laravel Boost package guideline; never edit directly.
+- `resources/boost/skills/` — modular skills exposed to agents.
+- `src/Cli/` — CLI configuration, preset selection and symlink/copy installer.
+- `scripts/build-boost-guidelines.php` — compiles selected authored guidelines into the single Boost package entrypoint.
 
-- `bin/pfm-guidelines` — entrypoint CLI‑скрипта
-- `src/Cli/*` — логика CLI, конфиг, инсталлятор, утилиты путей
-- `resources/boost/guidelines/` — исходные markdown‑гайдлайны, которые публикуются в проект
-- `resources/boost/skills/` — набор skills, которые (опционально) публикуются в `.ai/skills/`
-- `vendor/` — зависимости Composer
+Keep authored markdown outside `resources/boost/guidelines/`: Boost scans that directory and duplicate source files would duplicate agent context.
 
-## Development — как запускать, гонять тесты, любые важные команды
+## Product rules
 
-- Установить зависимости: `composer install`
-- Запуск CLI из репозитория: `php bin/pfm-guidelines init` или `php bin/pfm-guidelines sync`
-- В проекте‑потребителе: `vendor/bin/pfm-guidelines init` / `vendor/bin/pfm-guidelines sync`
-- Автотестов в репозитории нет
+- Always-on guidelines must stay small and stable.
+- Detailed workflows/style belong in skills.
+- Fast-moving library API documentation belongs in MCP/version-aware official docs, not copied skills.
+- Nuxt UI does not ship package skills; its component API comes from current docs/MCP.
+- Changes to shared guidelines/skills affect every consuming project, so avoid project-specific paths and transient implementation details.
+
+## Development
+
+```bash
+composer install
+php scripts/build-boost-guidelines.php --check
+php bin/pfm-guidelines list
+php bin/pfm-guidelines sync --dry-run --no-interaction --presets=laravel
+```
+
+There is currently no automated test suite; syntax-check modified PHP files and validate the generated Boost guideline before merging.

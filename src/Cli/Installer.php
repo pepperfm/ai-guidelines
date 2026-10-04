@@ -23,7 +23,7 @@ final readonly class Installer
                 : ($this->projectRoot . DIRECTORY_SEPARATOR . $config->target),
         );
         $packageBase = Paths::packageBase();
-        $resourceBase = $packageBase . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'boost' . DIRECTORY_SEPARATOR . 'guidelines';
+        $resourceBase = $packageBase . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'guidelines';
 
         $this->ensureDir($targetBase, $result);
 
@@ -180,7 +180,9 @@ final readonly class Installer
 
     private function linkOrCopy(Config $config, string $src, string $dst, InstallResult $result): void
     {
-        if (file_exists($dst) || is_link($dst)) {
+        if (is_link($dst) && !file_exists($dst)) {
+            $this->remove($dst, $result);
+        } elseif (file_exists($dst) || is_link($dst)) {
             if (!$this->force && $this->isAlreadyCorrect($config, $src, $dst)) {
                 $result->addSkipped($dst . ' (already up to date)');
                 return;
