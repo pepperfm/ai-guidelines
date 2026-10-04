@@ -1,131 +1,91 @@
 ---
 name: laravel-sail-and-tests
-description: 'Sail (Artisan/Composer/Bun) и тесты: команды, типовые сценарии, таймауты, правила вывода. Активируй при работе с консольными командами и CI через Sail.'
+description: 'Laravel/Sail команды и тестовый workflow: Artisan/Composer/Bun, Pest/PHPUnit version awareness, targeted tests и verification. Активируй при запуске команд или написании/изменении тестов.'
 ---
 
-# Skill: Laravel — Sail, Artisan, Composer, Tests
+# Skill: Laravel — Sail, Commands & Tests
 
-**Версия:** 2026‑01‑30
+**Версия:** 2026-10-04
 
 ## Когда использовать
 
-- Нужны команды для Laravel/Sail.
-- Нужно подсказать запуск миграций/сидов/очередей/кэшей.
-- Нужно запустить/подсказать тесты.
+- Нужно запускать Artisan/Composer/Bun через Laravel Sail.
+- Пишешь, исправляешь или ревьюишь Pest/PHPUnit tests.
+- Нужно выбрать минимальный verification workflow после изменения backend-кода.
 
-> Если в проекте есть skill `laravel-php-style` и `laravel-senior-analyst` — эта skill дополняет их, но не противоречит.
+## 1) Среда выполнения
 
----
-
-## 1) Все команды — через Sail (MUST)
-
-Проект работает в Docker через **Laravel Sail**.
-
-### Разрешено
-
-- `./vendor/bin/sail artisan ...`
-- `./vendor/bin/sail composer ...`
-- `./vendor/bin/sail bun ...`
-
-### Запрещено
-
-- `docker compose exec ...` напрямую
-- хостовый `php artisan ...` (вне контейнера)
-- хостовый `composer ...` (вне контейнера)
-
-**Важно:** нельзя утверждать, что команда была выполнена (миграции применены, тесты прошли), если в ответе нет реального вывода команды.
-
----
-
-## 2) Таймауты и вывод (SHOULD)
-
-- Обычная команда: ориентир **до 60 сек**.
-- Тесты/миграции: допускается **до 180 сек**.
-- Если stdout становится слишком большим (ориентир: > ~200 строк / > ~64 KiB):
-  1) дай короткое резюме,
-  2) приложи «хвост» (последние ~80–120 строк),
-  3) предложи полный лог по запросу.
-
----
-
-## 3) Artisan — базовый шаблон
+Если проект использует Laravel Sail, PHP/Artisan/Composer-команды запускаем через него:
 
 ```bash
-./vendor/bin/sail artisan <command> [options]
+./vendor/bin/sail artisan <command>
+./vendor/bin/sail composer <command>
+./vendor/bin/sail bun <command>
 ```
 
-Примеры:
-```bash
+Не подменяй существующий project runner на `docker compose exec` или host PHP без причины. Если проект не использует Sail, следуй его локальным командам.
 
-# Миграции
+Нельзя заявлять, что команда была выполнена или тест прошёл, если нет реального вывода.
 
-./vendor/bin/sail artisan migrate
-./vendor/bin/sail artisan migrate:fresh --seed
+## 2) Version-aware Pest / PHPUnit
 
-# Генерация
+Перед написанием или исправлением теста:
 
-./vendor/bin/sail artisan make:controller UserController
-./vendor/bin/sail artisan make:model Order -mfc
+1. Определи реальные версии `pestphp/pest`, `phpunit/phpunit` и relevant Pest plugins из `composer.lock` / Boost application info.
+2. Для Laravel/Pest integration используй version-aware docs / project MCP. Если документация неоднозначна или отстаёт, проверь API установленного кода в `vendor/`.
+3. Не используй методы из другого major Pest/PHPUnit по памяти.
+4. Не используй deprecated API, если установленная версия предоставляет поддерживаемую замену.
+5. Если IDE или static analyzer показывает `undefined method`, неправильную сигнатуру или deprecation — это незавершённая работа, даже если runtime-test случайно проходит.
 
-# Очереди
+Если в проекте установлен `pestphp/pest-plugin-agent`, используй его skill/workflow для быстрых behavioural probes, когда это уместно.
 
-./vendor/bin/sail artisan queue:work --once
+## 3) Запуск тестов
 
-# Кэши
-
-./vendor/bin/sail artisan config:cache
-./vendor/bin/sail artisan route:cache
-```
-
----
-
-## 4) Тестирование (Pest через `artisan test`)
-
-### 4.1 Запуск
+Сначала запускай самый узкий тест:
 
 ```bash
-
-# Все тесты
-
-./vendor/bin/sail artisan test
-
-# Конкретный файл
-
 ./vendor/bin/sail artisan test tests/Feature/UserTest.php
-
-# Фильтр по имени теста
-
 ./vendor/bin/sail artisan test --filter=test_user_can_login
-
-# Компактный вывод
-
 ./vendor/bin/sail artisan test --compact
 ```
 
-### 4.2 Параллельные тесты (MUST NOT по умолчанию)
+Полный suite нужен после локального зелёного результата или когда project gate явно этого требует.
 
-`--parallel` **нельзя** предлагать/включать по умолчанию.
+Не добавляй `--parallel` по умолчанию. Используй его только если проект уже настроен для parallel testing или это явно подтверждено локальными командами/конфигурацией.
 
-Разрешено **только** если пользователь **явно** подтверждает, что права БД/настройки для воркеров готовы (иначе типично ловят `SQLSTATE[HY000] [1044] Access denied`).
+## 4) Static analysis тестов
 
-### 4.3 После изменений
+После изменения PHP-теста:
 
-После генерации/рефакторинга (особенно затрагивающего домен/HTTP/БД) — **SHOULD** предложить прогнать релевантные тесты.
+- если project PHPStan/Larastan анализирует `tests/`, прогони анализ по изменённому тесту или тестовому каталогу;
+- если установлен Pest PHPStan extension / PHPUnit extension, используй существующий project command;
+- если `tests/` исключены из static analysis, не заявляй, что IDE/type-level API проверены: укажи этот gap;
+- не добавляй ignore/suppression только чтобы скрыть deprecated/undefined test API.
 
----
-
-## 5) Composer / bun
+Пример, если проект это поддерживает:
 
 ```bash
+./vendor/bin/sail bin phpstan analyse tests/Feature/UserTest.php
+```
 
-# Composer
+## 5) Verification order
 
-./vendor/bin/sail composer i
-./vendor/bin/sail composer r vendor/package
+Для backend-изменения нормальный порядок:
 
-# bun
+1. affected test / narrow filter;
+2. static analysis изменённых PHP-файлов, если настроен;
+3. formatter/linter project command;
+4. broader project gate (`make check`, `make do-anal`, full suite и т.п.) — если он принят в репозитории.
 
-./vendor/bin/sail bun i
+Не создавай отдельный verification script, если существующие tests/checks уже покрывают задачу.
+
+## 6) Composer / Bun
+
+```bash
+./vendor/bin/sail composer install
+./vendor/bin/sail composer require vendor/package
+
+./vendor/bin/sail bun install
 ./vendor/bin/sail bun run dev
 ./vendor/bin/sail bun run build
 ```

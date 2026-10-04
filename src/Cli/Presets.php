@@ -17,11 +17,11 @@ final class Presets
      */
     private const array PRESETS = [
         'laravel' => [
-            'label' => 'Laravel/Sail/MCP (Codex overrides)',
+            'label' => 'Laravel shared defaults (Boost/MCP aware)',
             'flat' => '10-laravel.md',
         ],
         'nuxt-ui' => [
-            'label' => 'Nuxt UI (Vue/Vite) inside Laravel + Inertia',
+            'label' => 'Nuxt UI minimal integration rules (docs via MCP)',
             'flat' => '11-nuxt-ui.md',
         ],
     ];

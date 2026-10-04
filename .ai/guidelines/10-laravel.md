@@ -1,1 +1,1 @@
-../../resources/boost/guidelines/laravel/core.md
+../../resources/guidelines/laravel/core.md

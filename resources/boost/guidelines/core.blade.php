@@ -1,93 +1,49 @@
 {{-- AUTO-GENERATED FILE. DO NOT EDIT DIRECTLY. --}}
-{{-- This file is generated from markdown sources in resources/boost/guidelines/**/*.md --}}
+{{-- This file is generated from markdown sources in resources/guidelines/**/*.md --}}
 {{-- Run: php scripts/build-boost-guidelines.php --}}
-{{-- Checksum: 74cd433fb5fac27cc3900d3baa19982bc7289478 --}}
+{{-- Checksum: f3f6f8b53760131889518f650b6e3d0dca614531 --}}
 @verbatim
 <!-- BEGIN: _core/core.md -->
 
-# Core — Project Guidelines (MUST)
+# Core — Agent Guidelines
 
-**Версия:** 2026‑01‑30
+**Версия:** 2026-10-04
 
-Этот файл содержит **общие правила**, применимые ко всем проектам в репозитории (Laravel / Inertia / Nuxt UI / Vite и т.д.).
+Этот guideline намеренно короткий. В always-on контексте должны оставаться только стабильные правила; подробные workflow и style-конвенции живут в skills.
 
-## Где искать файлы после установки (SHOULD)
+## 1) Источники правды
 
-Этот пакет умеет раскладывать гайдлайны двумя способами (зависит от `pfm-guidelines --layout`):
+Приоритет для технических решений:
 
-- `flat-numbered`: в target лежат файлы вроде `01-core.md`, `10-laravel.md`, `11-nuxt-ui.md` (и `011-laravel-macros.md`, если включено).
-- `folders`: в target лежат файлы вроде `_core/core.md`, `laravel/core.md`, `nuxt-ui/core.md` (и `laravel/macros.md`, если включено).
+1. текущий код и конфигурация репозитория;
+2. lock-файлы и реально установленные зависимости (`composer.lock`, `package.json` / lockfile, `vendor/`, `node_modules/`, если доступны);
+3. project tools / MCP и version-aware documentation;
+4. официальная документация нужной версии;
+5. память модели — только как fallback.
 
----
+Перед использованием version-sensitive API сначала определи установленную версию. Не переноси синтаксис между major-версиями по памяти.
 
-## 1) Приоритеты инструкций (MUST)
+Если guideline или skill ссылается на путь/класс, которого больше нет, не считай ссылку архитектурной истиной: найди актуальную реализацию в репозитории и продолжай от неё.
 
-- **MUST > SHOULD.** При конфликте обязателен к исполнению MUST.
-- Эти гайдлайны **выше** общих туториалов/примеров из интернета, если не указано иное.
-- Если загружено несколько гайдлайнов, действует **каскад**: более специфичный (обычно ближе к рабочей директории) имеет больший приоритет.
-- Если пользователь **явно** просит отступить от правил, это допустимо **только если** не нарушает MUST/безопасность/песочницу.
+## 2) Skills и контекст
 
----
+- Не загружай все skills заранее. Обычно достаточно 1–3 навыков, релевантных текущей задаче.
+- Project-local rules/skills имеют приоритет над shared package guidance.
+- Guideline отвечает на вопрос «какие инварианты соблюдать», skill — «как выполнять конкретный workflow».
+- Большие справочники API не копируем в guidelines: для них используем MCP / version-aware docs.
 
-## 2) Язык и тон (MUST)
+## 3) Изменения кода
 
-- **Русский — язык общения по умолчанию.**
-- Имена компонентов/props/опций/слотов, названия классов/файлов, ключи `.env`, команды CLI, тексты исключений — **не переводить**.
-- Для длинных англоязычных логов/трейсов:
-  1) сначала дать короткое русское резюме «что сломалось и где»;
-  2) затем привести небольшой релевантный фрагмент оригинала (см. §4).
+- Перед изменением посмотри соседний код и существующие паттерны проекта.
+- Не добавляй abstraction/dependency только ради «чистоты», если текущей задаче она не нужна.
+- Не ослабляй тесты ради зелёного прогона: не удаляй проверки, не заменяй их бессодержательными assertions и не suppress-ь реальные ошибки без объяснимой причины.
+- Не используй deprecated API, если в установленной версии есть поддерживаемая замена.
 
----
+## 4) Проверка результата
 
-## 3) Контейнер и выполнение команд (MUST)
-
-- Проект работает в **Laravel Sail**. Все PHP/Artisan‑команды запускаются через `./vendor/bin/sail artisan ...`.
-- **Не использовать** `docker compose exec ...` напрямую — только Sail‑обёртку.
-- Примеры:
-  - Миграции: `./vendor/bin/sail artisan migrate`
-  - Тесты: `./vendor/bin/sail artisan test`
-  - Любая Artisan‑команда: `./vendor/bin/sail artisan <command>`
-  - Composer: `./vendor/bin/sail composer ...`
-  - Фронтенд (bun): `./vendor/bin/sail bun ...`
-- **Нельзя заявлять**, что команда была запущена/миграции применены/тесты пройдены, если это не подтверждено выводом команды.
-
----
-
-## 4) Дисциплина вывода (SHOULD)
-
-- Не вставлять в ответ «простыню» логов.
-- По умолчанию достаточно:
-  - 5–15 строк контекста вокруг ошибки **и/или**
-  - последние 20–60 строк вывода (tail), если ошибка в конце.
-- Если нужен полный лог — сначала спросить, либо предложить сохранить лог в файл и приложить путь.
-
----
-
-## 5) Источники правды и актуальность (SHOULD)
-
-- Приоритет источников:
-  1) код и конфигурация репозитория;
-  2) MCP‑серверы проекта;
-  3) локальные «зеркала» документации в репозитории;
-  4) официальные доки библиотек/фреймворков.
-- При сомнениях по версии:
-  - уточнить установленную версию (`composer.lock`, `package.json`) и сверять с соответствующей веткой документации.
-
----
-
-## 6) Без «фоновых обещаний» (MUST)
-
-- Нельзя отвечать в стиле «сделаю позже», «подождите», «вернусь с результатом».
-- Либо выполнить задачу прямо сейчас, либо честно описать ограничение и дать следующий лучший вариант.
-
----
-
-## 7) Skills (SHOULD)
-
-Если в проекте есть каталог `.ai/skills/` — это **набор модульных навыков**.
-
-- **Не подгружай все навыки сразу.** Выбирай 1–3 релевантных под задачу (чтобы экономить контекст/токены).
-- Если задача затрагивает конкретный стек — сначала подключай профильный skill (например, Nuxt UI / Laravel стиль).
+- Сначала запускай самый узкий релевантный check/test, затем более широкий gate, если он нужен проекту.
+- Если проект уже имеет lint/static-analysis/test команды, используй их вместо одноразовых verification scripts.
+- Нельзя утверждать, что тесты, анализ или команды прошли, если это не подтверждено реальным выводом.
 
 <!-- END: _core/core.md -->
 
@@ -95,167 +51,58 @@
 
 <!-- BEGIN: laravel/core.md -->
 
-# Codex — Laravel/Sail Guidelines (Lite)
+# Laravel — Shared Guidelines (Lite)
 
-**Версия:** 2026‑03‑25
+**Версия:** 2026-10-04
 
-Этот документ — **короткая версия** Laravel‑правил: только MUST/ограничения.
-Детальные примеры и разъяснения вынесены в `.ai/skills/**` (SKILLS), чтобы экономить контекст/токены.
+Этот файл содержит только always-on правила. Детали PHP/Laravel style и workflow команд/тестов вынесены в skills.
 
-> Общие правила (Core) см. в target: `01-core.md` (layout `flat-numbered`) или `_core/core.md` (layout `folders`).
+## Skills
 
----
+Подключай по необходимости:
 
-## 1) Skills (подключай по необходимости)
+- `laravel-php-style` — PHP/Laravel style, data access, Eloquent, requests, HTTP/errors, enums и naming.
+- `laravel-sail-and-tests` — Sail/Artisan/Composer/Bun, Pest/PHPUnit, targeted test runs и verification.
+- `laravel-array-macros` — только если проект использует `pepperfm/macros-for-laravel` и задача касается `Arr::*` macros.
 
-- `laravel-sail-and-tests` — запуск команд и тестов через Sail + правила таймаутов/вывода.
-- `laravel-php-style` — подробный PHP/Laravel стиль: strict_types, helpers, Arr::get, FQCN, импорты, контроллеры.
-- `laravel-array-macros` — гайд по Pepperfm\LaravelMacros для `Arr::*` и soft-cast accessors (если используется).
+## Version-aware Laravel
 
----
+- Версии PHP, Laravel, Pest, PHPUnit и Laravel ecosystem packages определяй из текущего проекта (`composer.lock`, Boost application info), а не из памяти модели.
+- Если доступен Laravel Boost MCP / `search-docs`, используй его первым для Laravel ecosystem.
+- Для API стороннего Composer-пакета при сомнении сверяй установленную версию и локальный `vendor/`; документация должна соответствовать этой версии.
+- Если IDE/static analyzer помечает вызов как deprecated или undefined, исправь вызов на API установленной версии. Не suppress-ь предупреждение только ради прохождения проверки.
+- Не копируй в проект API-примеры из другого major Laravel/Pest/PHPUnit без проверки совместимости.
 
-## 2) MUST
+## Project conventions
 
-- Все команды запускаются через **Laravel Sail** (`./vendor/bin/sail ...`).
-- Если в проекте доступен Laravel Boost MCP / Docs API, сначала используем его как источник правды по Laravel ecosystem, а не «память» модели.
-- Нельзя утверждать, что команда была выполнена, если нет подтверждённого вывода.
-- Каждый PHP-файл начинается с `declare(strict_types=1);`.
-- Все публичные методы имеют явные return type'ы (для HTTP — конкретные типы ответа).
-- Для вендорных типов в сигнатурах — **inline FQCN** (не импортировать ради сокращения).
-- Для данных: guaranteed key -> прямой доступ, optional array key -> `Arr::get(...)`, mixed/object path -> `data_get(...)`; не пишем `$payload['x'] ?? null` как замену helper-у.
-- Helpers > Facades: если есть helper — используем helper.
-- Для `str()`: UUID как строку получаем через `str()->uuid()->toString()`, а обычную PHP-строку из fluent `Stringable` — через `->value()`.
-- Интерполяция строк допустима; простые `$var` и `$object->property` пишем без `{}`, более сложные выражения оставляем прямо в строке через `{...}` и не упрощаем их без причины во временные переменные или конкатенацию.
-- Для "пусто / заполнено" по умолчанию предпочитаем `blank()` / `filled()`, `=== null` оставляем для проверки именно `null`, а `empty()` в основном для явной проверки пустого массива.
-- `Collection` сохраняем для fluent-обработки; в `array` переходим только на границе контракта, native PHP или внешнего payload.
-- В Eloquent по умолчанию предпочитаем `exists()/doesntExist()`, `value()`, `firstWhere()`, `findOrFail()/firstOrFail()` и `pluck(...)->all()`.
-- В контроллерах helper-first и sugar-first: `response()->json(...)`, `to_route(...)`, `back()`; доменный слой по умолчанию кидает исключения, а не строит HTTP response.
-- Не вводим временные переменные и лишние локальные рефакторы без пользы; request-like DI объект по умолчанию называется `$request`.
-- Обычный `Request` и inline `$request->validate(...)` допустимы для простых кейсов; если входной слой растёт, default move — в `FormRequest`; если нужен тип — используем typed request methods.
-- Для исключений имя переменной всегда `$e`; не логируем/не `report(...)` исключение перед пробросом без новой полезной информации.
-- Импорты держим в стабильном порядке; если импортирован родительский класс (`extends BaseClass`), он идёт первым среди всех `use`-импортов файла.
-- Используем проектные хелперы: `user()`, `when()`, `valueOrDefault()`, `db()`.
-- Контроллеры тонкие, валидация — через `FormRequest`.
-- Не читать `env()` в рантайме — только `config()`.
-- Доступ к БД: Eloquent по умолчанию; при Query Builder/транзакциях — `db()`.
-
----
-
-## 3) MUST NOT
-
-- Не использовать `docker compose exec` напрямую.
-- Не запускать `php artisan`/`composer` на хосте (вне контейнера).
-- Не предлагать Pest `--parallel` без явного подтверждения готовых прав/настроек БД.
-- Не использовать фасады, если существует эквивалентный helper.
-
----
-
-## 4) Быстрые команды (шпаргалка)
-
-> Детали, таймауты и вывод — в skill `laravel-sail-and-tests`.
-
-```bash
-# Artisan
-./vendor/bin/sail artisan migrate
-./vendor/bin/sail artisan test
-
-# Composer
-./vendor/bin/sail composer i
-
-# Frontend
-./vendor/bin/sail bun run dev
-```
+- Сначала следуй локальному коду и project-local rules; shared guideline не должен переопределять осознанную архитектуру конкретного приложения.
+- Для backend-изменений загрузи `laravel-php-style`, вместо того чтобы держать подробный style guide в always-on контексте.
+- Для команд и тестов загрузи `laravel-sail-and-tests`; там находятся правила запуска и проверки.
 
 <!-- END: laravel/core.md -->
 
 ---
 
-<!-- BEGIN: laravel/macros.md -->
-
-# Laravel Macros — Quick Pointer
-
-**Версия:** 2026‑03‑24
-
-Этот файл намеренно короткий: **полный** гайд по `Pepperfm\LaravelMacros` вынесен в SKILLS, чтобы не раздувать контекст.
-
-## Где лежит полный гайд
-
-- Skill: `laravel-array-macros`
-- Файл: `.ai/skills/laravel-array-macros/SKILL.md`
-
-## Когда подключать skill `laravel-array-macros`
-
-- В задаче упоминаются `macros-for-laravel`, `MACROS_PROFILE`, `MACROS_ENABLED`.
-- Работаешь с фасадом `Arr`, особенно если значение читается из массива **сразу как тип** (`int|bool|float|string|array|enum`).
-- Нужно объяснить/настроить профили, политики конфликтов (`conflicts`, `unreachable`) или добавить кастомную группу.
-
-## Короткий принцип
-
-- `Arr::get(...)` — доступ без приведения.
-- `Arr::int / bool / toFloat / toString / toArray / toEnum` — доступ **с soft-cast**.
-- Если выбран макрос, внешний код не должен повторять его работу кастами, `trim`, `??` или избыточными аргументами по умолчанию.
-
-Примеры:
-
-```php
-// Было
-(int) Arr::get($payload, 'timeout', 600);
-
-// Нужно
-Arr::int($payload, 'timeout', 600);
-
-// Было
-Arr::toString($payload, 'title', null);
-
-// Нужно
-Arr::toString($payload, 'title');
-```
-
-> Общие правила (Core) см. в target: `01-core.md` (layout `flat-numbered`) или `_core/core.md` (layout `folders`).
-
-<!-- END: laravel/macros.md -->
-
----
-
 <!-- BEGIN: nuxt-ui/core.md -->
 
-# Nuxt UI — Project Guidelines (Lite)
+# Nuxt UI — Minimal Integration Guidelines
 
-**Версия:** 2026‑01‑30
+**Версия:** 2026-10-04
 
-Этот файл — **тонкий**: только MUST/ограничения по Nuxt UI в стеке *Laravel + Inertia + Vite + Tailwind*.
-Детальная интеграция, паттерны и примеры вынесены в `.ai/skills/nuxt-ui-*`, чтобы экономить контекст/токены.
+Этот preset намеренно не содержит локального справочника компонентов и не устанавливает Nuxt UI skills. API Nuxt UI меняется достаточно быстро, поэтому props/slots/examples нужно брать из актуального MCP или официальной документации установленной версии.
 
-> Общие правила (Core) см. в target: `01-core.md` (layout `flat-numbered`) или `_core/core.md` (layout `folders`). Laravel‑правила: `10-laravel.md` или `laravel/core.md`.
+## Source of truth
 
----
+- Сначала определи установленную версию `@nuxt/ui` из package manager lockfile.
+- Для component API, props, slots и examples используй Nuxt UI MCP / официальные version-matching docs, а не память модели.
+- Не поддерживай локальные копии больших фрагментов Nuxt UI docs в этом пакете.
 
-## 1) Skills (подключай по необходимости)
+## Laravel + Inertia invariants
 
-- `nuxt-ui-mcp-and-docs` — работа с MCP-сервером Nuxt UI + локальное зеркало доков.
-- `nuxt-ui-integration` — установка, `vite.config.ts`, `app.ts`, CSS, `UApp`, `isolate`.
-- `nuxt-ui-patterns` — архитектура UI, overlays, формы, темизация, примеры, TL;DR.
-
----
-
-## 2) MUST
-
-- **Источник правды по Nuxt UI — MCP**: при вопросах про компоненты/props/slots сначала используем MCP `nuxt-ui`.
-- Экономим контекст: через MCP просим только нужное (`get_component_metadata`, `sections=...`).
-- Если MCP недоступен и в проекте есть `.ai/nuxtui/` — это локальное зеркало доков, используем его.
-- В `vite.config.ts` Nuxt UI в режиме Inertia: `ui({ router: 'inertia' })`.
-- Корневой layout оборачиваем в `<UApp>`.
-- В Blade/Inertia‑корне ставим класс `isolate` (чтобы не ломались overlay‑слои/z-index).
-- Не импортируем `useToast()` / `useOverlay()` вручную: они auto-import.
-- Programmatic overlays (`overlay.create(...)`) держим рядом с триггером (страница/компонент), composables — только для бизнес-логики.
-
----
-
-## 3) MUST NOT
-
-- Не подключать `vue-router`, если проект работает с `router: 'inertia'` и роутинг обеспечивает Inertia.
-- Не строить UI из «голых div+border», если есть эквивалентный компонент Nuxt UI.
-- Не тащить огромные куски доков в ответ: даём краткое резюме + ссылку/указание на skill.
+- Если проект использует Nuxt UI в Vue/Vite + Inertia режиме, сохраняй существующую integration-схему проекта; не добавляй `nuxt.config.ts` или Nuxt runtime без явной причины.
+- Не добавляй `vue-router`, если навигацией управляет Inertia.
+- Корневой UI provider (`UApp`) и текущую настройку Vite/Nuxt UI считай частью project contract и проверяй по реальному коду перед изменением.
+- Предпочитай компоненты Nuxt UI самописным заменам там, где библиотека уже предоставляет подходящий компонент.
 
 <!-- END: nuxt-ui/core.md -->
 @endverbatim

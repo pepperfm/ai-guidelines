@@ -1,21 +1,20 @@
 # PepperFM Skills
 
-Этот каталог содержит **модульные навыки** (SKILLS), которые можно подключать по мере надобности, вместо того чтобы держать весь объём правил в `AGENTS.md` / `CLAUDE.md`.
+Этот каталог содержит модульные skills для workflow, которые не должны постоянно попадать в `AGENTS.md` / `CLAUDE.md`.
 
-## Формат (совместимо с Laravel Boost / Agent Skills)
+## Принцип
 
-- Каждый навык — это папка вида `<skill-name>/SKILL.md`.
-- `<skill-name>` — `kebab-case` (например `laravel-php-style`).
-- В `SKILL.md` есть YAML frontmatter с `name` и `description`.
+- Guideline держит только стабильные always-on invariants.
+- Skill описывает конкретный workflow или style-domain.
+- API библиотек и быстро меняющиеся справочники не дублируем в skills, если их можно получить из актуального MCP / version-aware docs.
+- Обычно достаточно загрузить 1–3 релевантных skills.
 
-Примеры:
+## Основные skills
 
-- `laravel-sail-and-tests/SKILL.md`
-- `laravel-php-style/SKILL.md`
-- `nuxt-ui-mcp-and-docs/SKILL.md`
-- `nuxt-ui-patterns/SKILL.md`
+- `laravel-php-style` — PHP/Laravel style и backend conventions.
+- `laravel-sail-and-tests` — commands, Pest/PHPUnit и verification.
+- `laravel-array-macros` — `Pepperfm\LaravelMacros` (опционально).
+- `spatie-laravel-data` — package-specific workflow.
+- `plan`, `review`, `commit` — общие agent workflows.
 
-## Рекомендация по экономии контекста
-
-- Не подключай все навыки сразу.
-- Обычно достаточно 1–3 навыков под текущую задачу.
+Nuxt UI skills намеренно не поставляются: component API нужно получать из актуального Nuxt UI MCP / официальной документации установленной версии.

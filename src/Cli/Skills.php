@@ -21,11 +21,6 @@ final class Skills
             'laravel-sail-and-tests',
             'laravel-php-style',
         ],
-        'nuxt-ui' => [
-            'nuxt-ui-mcp-and-docs',
-            'nuxt-ui-integration',
-            'nuxt-ui-patterns',
-        ],
     ];
 
     /**

@@ -15,8 +15,8 @@ declare(strict_types=1);
  *   php scripts/build-boost-guidelines.php
  *
  * Options:
- *   --src=...     Source directory (default: resources/boost/guidelines)
- *   --out=...     Output file (default: <src>/core.blade.php)
+ *   --src=...     Source directory (default: resources/guidelines)
+ *   --out=...     Output file (default: resources/boost/guidelines/core.blade.php)
  *   --index=...   Optional index file (default: <src>/_index.txt)
  *   --check       Exit non-zero if output would change (CI-friendly)
  *   --dry-run     Print a summary, do not write the output
@@ -25,7 +25,6 @@ declare(strict_types=1);
  *   # comments are allowed
  *   _core/core.md
  *   laravel/core.md
- *   laravel/macros.md
  *   nuxt-ui/core.md
  */
 
@@ -49,8 +48,8 @@ final class BuildBoostGuidelines
         $opts = $this->parseOpts();
 
         $root = $this->projectRoot();
-        $src = $this->realOrJoin($opts['src'] ?? null, $root . '/resources/boost/guidelines');
-        $out = $this->realOrJoin($opts['out'] ?? null, $src . '/core.blade.php');
+        $src = $this->realOrJoin($opts['src'] ?? null, $root . '/resources/guidelines');
+        $out = $this->realOrJoin($opts['out'] ?? null, $root . '/resources/boost/guidelines/core.blade.php');
         $index = $this->realOrJoin($opts['index'] ?? null, $src . '/_index.txt');
 
         $check = isset($opts['check']);
@@ -186,7 +185,7 @@ final class BuildBoostGuidelines
 
         $header = implode("\n", [
             '{{-- AUTO-GENERATED FILE. DO NOT EDIT DIRECTLY. --}}',
-            '{{-- This file is generated from markdown sources in resources/boost/guidelines/**/*.md --}}',
+            '{{-- This file is generated from markdown sources in resources/guidelines/**/*.md --}}',
             '{{-- Run: php scripts/build-boost-guidelines.php --}}',
             "{{-- Checksum: {$checksum} --}}",
             '',
